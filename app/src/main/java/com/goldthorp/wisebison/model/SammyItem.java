@@ -5,7 +5,7 @@ import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
-//import com.goldthorp.sammy.util.BackupEntity;
+import com.goldthorp.annotation.BackupEntity;
 
 import java.io.Serializable;
 
@@ -17,9 +17,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Entity(tableName = "sammy-item")
 @EqualsAndHashCode
-//@BackupEntity(name = "sammy-item")
+@Entity(tableName = "sammy-item")
+@BackupEntity(name = "sammy-item")
 public class SammyItem implements Serializable {
   /**
    * Serial UID.
@@ -71,7 +71,7 @@ public class SammyItem implements Serializable {
 
   @Ignore
   public SammyItem(
-      final String text, final float sentimentScore, final float sentimentMagnitude) {
+    final String text, final float sentimentScore, final float sentimentMagnitude) {
     this.text = text;
     this.sentimentScore = sentimentScore;
     this.sentimentMagnitude = sentimentMagnitude;

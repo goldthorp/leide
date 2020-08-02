@@ -1,0 +1,28 @@
+package com.goldthorp.wisebison.data;
+
+import androidx.lifecycle.LiveData;
+import androidx.room.Dao;
+import androidx.room.Insert;
+import androidx.room.Query;
+import androidx.room.Update;
+
+#foreach($entity in $entities)
+import $entity.qualifiedClassName;
+#end
+
+import java.util.List;
+
+@Dao
+public interface BackupEntityGeneratedDao {
+#foreach($entity in $entities)
+    @Insert
+    void _insert$entity.className (List<$entity.className> entities);
+
+    @Query("DELETE FROM `$entity.tableName`")
+    void _delete$entity.className ();
+
+    @Query("SELECT * FROM `$entity.tableName`")
+    LiveData<List<$entity.className>> _get$entity.className ();
+
+#end
+}

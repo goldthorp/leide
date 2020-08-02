@@ -4,6 +4,8 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import com.goldthorp.annotation.BackupEntity;
+
 import java.io.Serializable;
 
 import lombok.EqualsAndHashCode;
@@ -12,8 +14,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Entity(tableName = "diary-entry")
 @EqualsAndHashCode(exclude = {"entitiesAnalyzed", "sentimentAnalyzed"})
+@Entity(tableName = "diary-entry")
+@BackupEntity(name = "diary-entry")
 public class DiaryEntry implements Comparable<DiaryEntry>, Serializable {
   @PrimaryKey(autoGenerate = true)
   private Long id;

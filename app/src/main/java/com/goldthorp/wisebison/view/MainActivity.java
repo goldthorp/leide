@@ -1,13 +1,15 @@
 package com.goldthorp.wisebison.view;
 
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.Intent;
-import android.os.Bundle;
-
 import com.goldthorp.wisebison.R;
-import com.goldthorp.wisebison.data.AppDatabase;
+import com.goldthorp.wisebison.data.BackupUtil;
 import com.goldthorp.wisebison.view.auth.LoginActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -16,8 +18,10 @@ public class MainActivity extends AppCompatActivity {
 
   private static final int LOGIN_REQUEST_CODE = 1;
 
+  private BackupUtil backupUtil;
+
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(final Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
@@ -28,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
       final Intent intent = new Intent(this, LoginActivity.class);
       startActivityForResult(intent, LOGIN_REQUEST_CODE);
     } else {
-//      Backup.start(this);
+      backupUtil = new BackupUtil(this);
     }
   }
 
@@ -38,7 +42,30 @@ public class MainActivity extends AppCompatActivity {
     final int requestCode, final int resultCode, @Nullable final Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
     if (requestCode == LOGIN_REQUEST_CODE && resultCode == RESULT_OK) {
-//      Backup.start(this);
+      backupUtil = new BackupUtil(this);
     }
+  }
+
+  @Override
+  public boolean onCreateOptionsMenu(final Menu menu) {
+    // Inflate the menu; this adds items to the action bar if it is present.
+    getMenuInflater().inflate(R.menu.menu_main, menu);
+    return true;
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(final MenuItem item) {
+    // Handle action bar item clicks here. The action bar will
+    // automatically handle clicks on the Home/Up button, so long
+    // as you specify a parent activity in AndroidManifest.xml.
+    final int id = item.getItemId();
+
+    //noinspection SimplifiableIfStatement
+    if (id == R.id.action_settings && backupUtil != null) {
+      backupUtil.restore();
+      return true;
+    }
+
+    return super.onOptionsItemSelected(item);
   }
 }

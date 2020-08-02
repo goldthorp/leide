@@ -5,7 +5,7 @@ import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
-//import com.goldthorp.sammy.util.BackupEntity;
+import com.goldthorp.annotation.BackupEntity;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -20,10 +20,10 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@Entity(tableName = "sammy-session")
 @EqualsAndHashCode
 @NoArgsConstructor
-//@BackupEntity(name = "sammy-session")
+@Entity(tableName = "sammy-session")
+@BackupEntity(name = "sammy-session")
 public class SammySession implements Serializable {
   /**
    * Serial UID.

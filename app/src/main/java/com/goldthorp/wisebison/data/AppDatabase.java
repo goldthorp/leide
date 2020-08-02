@@ -18,8 +18,10 @@ public abstract class AppDatabase extends RoomDatabase {
 
   private static AppDatabase INSTANCE;
 
+  public abstract BackupEntityGeneratedDao getBackupEntityGeneratedDao();
+
   public static synchronized AppDatabase getInstance(final Context context) {
-    String dbName = "wisebison.db";
+    final String dbName = "wisebison.db";
     if (INSTANCE == null) {
       INSTANCE = Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, dbName)
         .build();

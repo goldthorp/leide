@@ -1,0 +1,21 @@
+apply plugin: 'java-library'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    // Apache velocity
+    implementation 'org.apache.velocity:velocity:1.7'
+
+    // Lombok
+    implementation 'org.projectlombok:lombok:1.18.12'
+    annotationProcessor 'org.projectlombok:lombok:1.18.12'
+
+    // Room
+    implementation "androidx.room:room-runtime:2.2.5"
+
+    // Apache commons lang
+    implementation 'org.apache.commons:commons-lang3:3.9'
+}
+
+sourceCompatibility = "8"
+targetCompatibility = "8"

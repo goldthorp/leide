@@ -35,8 +35,12 @@ dependencies {
     implementation 'org.projectlombok:lombok:1.18.12'
     annotationProcessor 'org.projectlombok:lombok:1.18.12'
 
-    // Appache commons lang
+    // Apache commons lang
     implementation 'org.apache.commons:commons-lang3:3.9'
+
+    // Local annotation processor
+    implementation project(path: ':processor')
+    annotationProcessor project(path: ':processor')
 
     // Room db
     def room_version = "2.2.5"
@@ -45,7 +49,6 @@ dependencies {
 
     // Navigation
     def nav_version = "2.2.2"
-
     implementation "androidx.navigation:navigation-fragment:$nav_version"
     implementation "androidx.navigation:navigation-ui:$nav_version"
 
@@ -55,7 +58,6 @@ dependencies {
     // Firebase
     implementation 'com.google.firebase:firebase-auth:19.3.2'
     implementation 'com.google.firebase:firebase-database:19.3.1'
-
 
     // Dependencies for Google API Client Libraries
     def googleApiClientVersion = '1.22.0'
@@ -79,4 +81,7 @@ dependencies {
 
     // Graph
     implementation 'com.jjoe64:graphview:4.2.2'
+
+    // Jackson
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.1'
 }
