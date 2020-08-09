@@ -6,13 +6,13 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-import com.goldthorp.wisebison.model.DiaryEntity;
 import com.goldthorp.wisebison.model.DiaryEntry;
+import com.goldthorp.wisebison.model.DiaryNamedEntity;
 import com.goldthorp.wisebison.model.DiarySentiment;
 import com.goldthorp.wisebison.model.SammyItem;
 import com.goldthorp.wisebison.model.SammySession;
 
-@Database(entities = {DiaryEntry.class, DiaryEntity.class, DiarySentiment.class,
+@Database(entities = {DiaryEntry.class, DiaryNamedEntity.class, DiarySentiment.class,
   SammySession.class, SammyItem.class}, version = 1, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 

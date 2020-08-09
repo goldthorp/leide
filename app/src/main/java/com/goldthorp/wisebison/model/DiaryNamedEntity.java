@@ -13,8 +13,8 @@ import lombok.ToString;
 @Setter
 @ToString
 @EqualsAndHashCode(of = {"name", "entryId", "beginOffset"})
-@Entity(tableName = "diary-entity")
-public class DiaryEntity {
+@Entity(tableName = "diary-named-entity")
+public class DiaryNamedEntity {
   @PrimaryKey(autoGenerate = true)
   private Long id;
 
