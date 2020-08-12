@@ -23,8 +23,10 @@ public class DiaryEntry implements Comparable<DiaryEntry>, Serializable {
 
   private String text;
 
+  @ColumnInfo(name = "start_timestamp")
   private Long startTimestamp;
 
+  @ColumnInfo(name = "save_timestamp")
   private Long saveTimestamp;
 
   private String location;

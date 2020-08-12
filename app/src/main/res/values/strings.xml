@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">Wise Bison</string>
+
+    <string name="entry_count">%d Entries</string>
+    <string name="save">Save</string>
+    <string name="new_entry_placeholder">Start typing your entry…</string>
+    <string name="confirm_discard_title">Discard Changes</string>
+    <string name="confirm_discard_message">Are you sure you want discard this entry?</string>
+    <string name="set_location">Set Location</string>
+
+    <string name="previous">Previous</string>
+    <string name="next">Next</string>
 </resources>

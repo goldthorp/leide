@@ -18,6 +18,8 @@ public abstract class AppDatabase extends RoomDatabase {
 
   private static AppDatabase INSTANCE;
 
+  public abstract DiaryEntryDao getDiaryEntryDao();
+
   public abstract BackupEntityGeneratedDao getBackupEntityGeneratedDao();
 
   public static synchronized AppDatabase getInstance(final Context context) {

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navigation.xml"
+    app:startDestination="@id/entryListFragment">
+
+    <fragment
+        android:id="@+id/entryListFragment"
+        android:name="com.goldthorp.wisebison.view.EntryListFragment"
+        android:label="EntryListFragment" >
+        <action
+            android:id="@+id/action_entryListFragment_to_viewDiaryEntryFragment"
+            app:destination="@id/viewDiaryEntryFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/viewDiaryEntryFragment"
+        android:name="com.goldthorp.wisebison.view.ViewDiaryEntryFragment"
+        android:label="fragment_view_diary_entry"
+        tools:layout="@layout/fragment_view_diary_entry">
+        <argument
+            android:name="diaryEntryId"
+            app:argType="long"/>
+    </fragment>
+</navigation>
