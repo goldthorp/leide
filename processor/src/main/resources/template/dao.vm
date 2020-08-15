@@ -1,4 +1,4 @@
-package com.goldthorp.wisebison.data;
+package com.wisebison.leide.data;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;

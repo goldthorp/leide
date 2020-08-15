@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/entryListFragment"
-        android:name="com.goldthorp.wisebison.view.EntryListFragment"
+        android:name="com.wisebison.leide.view.EntryListFragment"
         android:label="EntryListFragment" >
         <action
             android:id="@+id/action_entryListFragment_to_viewDiaryEntryFragment"
@@ -15,7 +15,7 @@
     </fragment>
     <fragment
         android:id="@+id/viewDiaryEntryFragment"
-        android:name="com.goldthorp.wisebison.view.ViewDiaryEntryFragment"
+        android:name="com.wisebison.leide.view.ViewDiaryEntryFragment"
         android:label="fragment_view_diary_entry"
         tools:layout="@layout/fragment_view_diary_entry">
         <argument

@@ -1,2 +1,2 @@
 include ':app', ':processor'
-rootProject.name='Wise Bison'
+rootProject.name='Leide'

@@ -9,7 +9,7 @@
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/diary_fragment"
-        android:name="com.goldthorp.wisebison.view.DiaryModuleFragment"
+        android:name="com.wisebison.leide.view.DiaryModuleFragment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"/>
