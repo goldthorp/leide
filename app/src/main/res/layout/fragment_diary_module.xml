@@ -3,7 +3,9 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="5dp">
+    android:padding="5dp"
+    android:background="@drawable/module_background"
+    android:layout_margin="3dp">
 
     <TextView
         android:id="@+id/entry_count_text_view"
@@ -35,7 +37,7 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_marginEnd="7dp"
-            android:src="@drawable/plus"/>
+            android:src="@drawable/add_entry"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
