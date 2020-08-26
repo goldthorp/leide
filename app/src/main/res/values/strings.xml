@@ -10,4 +10,8 @@
 
     <string name="previous">Previous</string>
     <string name="next">Next</string>
+
+    <string name="module_type_NAMED_ENTITIES">Named Entities</string>
+    <string name="module_type_SENTMENT">Sentiment</string>
+    <string name="add">Add</string>
 </resources>

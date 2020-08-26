@@ -3,8 +3,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.wisebison.diary.view.MainActivity">
     <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
+        android:id="@+id/action_restore_backup"
         android:title="restore backup"
-        app:showAsAction="never" />
+        android:icon="@drawable/ic_save_white"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/action_add_module"
+        android:title="add module"
+        app:showAsAction="always"
+        android:icon="@drawable/ic_add_white_24dp"/>
 </menu>
