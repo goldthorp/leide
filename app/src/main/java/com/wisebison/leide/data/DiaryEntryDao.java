@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import com.wisebison.leide.model.DiaryEntry;
 import com.wisebison.leide.util.BackgroundUtil;
@@ -44,6 +45,26 @@ public abstract class DiaryEntryDao {
     return BackgroundUtil.doInBackground(() -> _getNext(startTimestamp));
   }
 
+  @Query("SELECT * FROM `diary-entry` WHERE entities_analyzed = 0 OR sentiment_analyzed = 0")
+  public abstract LiveData<List<DiaryEntry>> getAllUnanalyzed();
+
+  @Query("SELECT * FROM `diary-entry` WHERE entities_analyzed = 0 OR sentiment_analyzed = 0")
+  abstract List<DiaryEntry> _getAllUnanalyzedOnce();
+
+  public BackgroundUtil.Background<List<DiaryEntry>> getAllUnanalyzedOnce() {
+      return BackgroundUtil.doInBackground(this::_getAllUnanalyzedOnce);
+  }
+
+  @Query("SELECT MIN(start_timestamp) FROM `diary-entry`")
+  abstract Long _getEarliestTimestamp();
+
+  public BackgroundUtil.Background<Long> getEarliestTimestamp() {
+    return BackgroundUtil.doInBackground(this::_getEarliestTimestamp);
+  }
+
   @Insert
   public abstract void insert(DiaryEntry entry);
+
+  @Update
+  public abstract void update(DiaryEntry... entries);
 }

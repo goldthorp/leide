@@ -14,4 +14,13 @@
     <string name="module_type_NAMED_ENTITIES">Named Entities</string>
     <string name="module_type_SENTMENT">Sentiment</string>
     <string name="add">Add</string>
+
+    <string name="analysis_progress">Analyzing %d%%</string>
+
+    <string name="no_entities">No entities found</string>
+    <string name="timeframe_24_hours">Past 24 hours</string>
+    <string name="timeframe_7_days">Past 7 days</string>
+    <string name="timeframe_30_days">Past 30 days</string>
+    <string name="timeframe_year">Past year</string>
+    <string name="timeframe_all_time">All time</string>
 </resources>

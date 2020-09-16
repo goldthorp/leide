@@ -5,4 +5,8 @@
     <color name="colorAccent">#D81B60</color>
     <color name="border_grey">#dbdbdb</color>
     <color name="text_dark">#1e201d</color>
+    <color name="white">#ffffff</color>
+
+    <color name="entity_text_dark">#676767</color>
+    <color name="entity_text_light">#8d8d8d</color>
 </resources>

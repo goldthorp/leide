@@ -88,6 +88,9 @@ dependencies {
 
     // Billing
     implementation 'com.android.billingclient:billing:3.0.0'
+
+    // Joda
+    implementation 'joda-time:joda-time:2.10.6'
 }
 
 apply plugin: "androidx.navigation.safeargs"

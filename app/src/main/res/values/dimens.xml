@@ -1,3 +1,7 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
+    <!-- the background for a carousel has a 20dp 'chin' for displaying the timeframe,
+     so make the height of the content 20dp less than module_height_large -->
+    <dimen name="carousel_item_content_height">180dp</dimen>
+    <dimen name="module_height_large">200dp</dimen>
 </resources>

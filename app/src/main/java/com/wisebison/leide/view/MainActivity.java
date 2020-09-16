@@ -2,7 +2,6 @@ package com.wisebison.leide.view;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.LinearLayout;
@@ -18,17 +17,35 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.wisebison.leide.R;
 import com.wisebison.leide.billing.BillingUtil;
+import com.wisebison.leide.cloud.AnalyzeUtil;
+import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.BackupUtil;
+import com.wisebison.leide.data.ModuleDao;
+import com.wisebison.leide.model.Module;
 import com.wisebison.leide.model.ModuleType;
+import com.wisebison.leide.util.BackgroundUtil;
 import com.wisebison.leide.view.auth.LoginActivity;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 public class MainActivity extends AppCompatActivity {
+
+  private static final String TAG = "MainActivity";
 
   private static final int LOGIN_REQUEST_CODE = 1;
 
   private BackupUtil backupUtil;
 
   private BillingUtil billingUtil;
+
+  private ModuleDao moduleDao;
+
+  private Map<ModuleType, ModuleFragment> addedModules;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -46,6 +63,39 @@ public class MainActivity extends AppCompatActivity {
     }
 
     addModules(new DiaryModuleFragment());
+
+    addedModules = new HashMap<>();
+
+    final AnalyzeUtil analyzeUtil = AnalyzeUtil.getInstance(this);
+
+    moduleDao = AppDatabase.getInstance(this).getModuleDao();
+    moduleDao.getAll().observe(this, modules -> {
+      final List<ModuleType> currentModules = new ArrayList<>();
+      for (final Module module : modules) {
+        final ModuleFragment fragment = module.getFragment();
+        if (fragment != null && !addedModules.containsKey(module.getModuleType())) {
+          addModules(fragment);
+          addedModules.put(module.getModuleType(), fragment);
+          currentModules.add(module.getModuleType());
+          if (ModuleType.NAMED_ENTITIES.equals(module.getModuleType())) {
+            analyzeUtil.setHasEntitiesModule(true);
+            analyzeUtil.start();
+          }
+        }
+      }
+      final Iterator<ModuleType> iterator = addedModules.keySet().iterator();
+      while (iterator.hasNext()) {
+        final ModuleType addedModule = iterator.next();
+        if (!currentModules.contains(addedModule)) {
+          getSupportFragmentManager().beginTransaction()
+            .remove(Objects.requireNonNull(addedModules.get(addedModule))).commit();
+          iterator.remove();
+          if (ModuleType.NAMED_ENTITIES.equals(addedModule)) {
+            analyzeUtil.setHasEntitiesModule(false);
+          }
+        }
+      }
+    });
 
     billingUtil = new BillingUtil(this);
   }
@@ -114,6 +164,9 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void onAddModule(final ModuleType moduleType) {
-    Log.d("TEST", "add " + moduleType + " to layout");
+    if (!addedModules.containsKey(moduleType)) {
+      final Module module = new Module(moduleType);
+      BackgroundUtil.doInBackgroundNow(() -> moduleDao.insert(module));
+    }
   }
 }
