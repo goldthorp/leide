@@ -21,11 +21,13 @@ public class CarouselView extends LinearLayout {
   private final List<View> views;
   private int idx;
   private boolean running;
+  private final Handler handler;
 
   public CarouselView(final Context context, @Nullable final AttributeSet attrs) {
     super(context, attrs);
     inflate(context, R.layout.view_carousel, this);
     views = new ArrayList<>();
+    handler = new Handler();
   }
 
   @Override
@@ -49,8 +51,8 @@ public class CarouselView extends LinearLayout {
       return;
     }
     running = true;
-    views.get(0).setVisibility(VISIBLE);
-    final Handler handler = new Handler();
+    idx = 0;
+    views.get(idx).setVisibility(VISIBLE);
     handler.postDelayed(new Runnable() {
       @Override
       public void run() {
@@ -58,6 +60,11 @@ public class CarouselView extends LinearLayout {
         handler.postDelayed(this, timeoutMillis);
       }
     }, timeoutMillis);
+  }
+
+  public void stop() {
+    handler.removeCallbacksAndMessages(null);
+    running = false;
   }
 
   public void moveToNext() {

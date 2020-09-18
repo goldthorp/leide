@@ -1,6 +1,5 @@
 package com.wisebison.leide.view;
 
-import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Layout;
@@ -17,6 +16,7 @@ import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.lifecycle.LiveData;
 
 import com.google.android.gms.common.util.CollectionUtils;
 import com.wisebison.leide.R;
@@ -46,6 +46,10 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
   private CarouselView carouselView;
 
   private NamedEntityDao namedEntityDao;
+  private DiaryEntryDao diaryEntryDao;
+
+  private LiveData<Long> entityCountLiveData;
+  private Long entityCount;
 
   private final int TIME_FRAME_ITEM_24_HOURS_ID = 1004;
   private final int TIME_FRAME_ITEM_WEEK_ID = 1003;
@@ -67,31 +71,49 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
     entitiesProgressBar = root.findViewById(R.id.entities_progress_bar);
     carouselView = root.findViewById(R.id.entities_carousel_view);
 
-    final Context context = requireContext();
-
-    final AppDatabase db = AppDatabase.getInstance(context);
+    final AppDatabase db = AppDatabase.getInstance(requireContext());
 
     namedEntityDao = db.getNamedEntityDao();
+    diaryEntryDao = db.getDiaryEntryDao();
 
-    final DiaryEntryDao diaryEntryDao = db.getDiaryEntryDao();
-    namedEntityDao.getAll().observe(getViewLifecycleOwner(), namedEntities ->
-      // Get timestamp of earliest entry to determine what the earliest timeframe to display
-      // in the carousel is.
-      diaryEntryDao.getEarliestTimestamp().then(earliestTimeStamp -> {
-        carouselView.removeAllViews();
-        if (earliestTimeStamp == null) {
-          // No entries have been added yet
-          entitiesProgressBar.setVisibility(View.GONE);
-          final EntityCarouselItemView noEntitiesView = new EntityCarouselItemView(context);
-          noEntitiesView.setEntitiesText(getResources().getString(R.string.no_entities));
-          carouselView.addView(noEntitiesView);
-          carouselView.setVisibility(View.VISIBLE);
-        } else {
-          new ProcessNamedEntitiesTask(this).execute(new DateTime(earliestTimeStamp));
-        }
-      }));
+    entityCountLiveData = namedEntityDao.getCount();
 
     return root;
+  }
+
+  @Override
+  public void onStart() {
+    super.onStart();
+    entityCountLiveData.observe(getViewLifecycleOwner(), count -> {
+      if (!count.equals(entityCount)) {
+        entityCount = count;
+        // Get timestamp of earliest entry to determine what the earliest timeframe to display
+        // in the carousel is.
+        diaryEntryDao.getEarliestTimestamp().then(earliestTimeStamp -> {
+          carouselView.stop();
+          carouselView.removeAllViews();
+          carouselView.setVisibility(View.GONE);
+          entitiesProgressBar.setVisibility(View.VISIBLE);
+          if (earliestTimeStamp == null) {
+            // No entries have been added yet
+            entitiesProgressBar.setVisibility(View.GONE);
+            final EntityCarouselItemView noEntitiesView =
+              new EntityCarouselItemView(requireContext());
+            noEntitiesView.setEntitiesText(getResources().getString(R.string.no_entities));
+            carouselView.addView(noEntitiesView);
+            carouselView.setVisibility(View.VISIBLE);
+          } else {
+            new ProcessNamedEntitiesTask(this).execute(new DateTime(earliestTimeStamp));
+          }
+        });
+      }
+    });
+  }
+
+  @Override
+  public void onStop() {
+    super.onStop();
+    entityCountLiveData.removeObservers(getViewLifecycleOwner());
   }
 
   /**
@@ -139,20 +161,6 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
           namedEntityDao.countEntitiesByName(timeFrame30Days.first, timeFrame30Days.second);
         results.put(fragment.getString(R.string.timeframe_30_days), 
           processEntities(namedEntityForms30Days));
-      }
-      if (earliest.isBefore(DateTime.now().minusDays(30))) {
-        // add year
-        final Pair<Long, Long> timeFrameYear = getTimeFrame(fragment.TIME_FRAME_ITEM_YEAR_ID);
-        final List<NamedEntityForm> namedEntityFormsYear =
-          namedEntityDao.countEntitiesByName(timeFrameYear.first, timeFrameYear.second);
-        results.put(fragment.getString(R.string.timeframe_year),
-          processEntities(namedEntityFormsYear));
-      }
-      if (earliest.isBefore(DateTime.now().minusYears(1))) {
-        // add all time
-        final List<NamedEntityForm> namedEntityFormsAllTime = namedEntityDao.countEntitiesByName();
-        results.put(fragment.getString(R.string.timeframe_all_time),
-          processEntities(namedEntityFormsAllTime));
       }
       return results;
     }

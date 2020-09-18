@@ -16,6 +16,9 @@ public interface NamedEntityDao {
   @Query("SELECT * FROM `named-entity`")
   LiveData<List<NamedEntity>> getAll();
 
+  @Query("SELECT COUNT(*) FROM `named-entity`")
+  LiveData<Long> getCount();
+
   @Query("SELECT name, count(*) FROM `named-entity` GROUP BY name ORDER BY count(*) DESC, name ASC")
   List<NamedEntityForm> countEntitiesByName();
 
