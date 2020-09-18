@@ -28,6 +28,15 @@ public class CarouselView extends LinearLayout {
     inflate(context, R.layout.view_carousel, this);
     views = new ArrayList<>();
     handler = new Handler();
+    addOnAttachStateChangeListener(new OnAttachStateChangeListener() {
+      @Override
+      public void onViewAttachedToWindow(final View v) { }
+
+      @Override
+      public void onViewDetachedFromWindow(final View v) {
+        stop();
+      }
+    });
   }
 
   @Override
