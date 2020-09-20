@@ -11,7 +11,7 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 @ToString
-public class NamedEntityForm {
+public class DiaryNamedEntityForm {
 
   /**
    * The name of this entity.

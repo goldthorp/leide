@@ -14,9 +14,9 @@ import com.google.api.services.language.v1.model.Entity;
 import com.google.api.services.language.v1.model.EntityMention;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.DiaryEntryDao;
-import com.wisebison.leide.data.NamedEntityDao;
+import com.wisebison.leide.data.DiaryNamedEntityDao;
 import com.wisebison.leide.model.DiaryEntry;
-import com.wisebison.leide.model.NamedEntity;
+import com.wisebison.leide.model.DiaryNamedEntity;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -48,7 +48,7 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
   /**
    * For saving the results of the named entity queries.
    */
-  private final NamedEntityDao namedEntityDao;
+  private final DiaryNamedEntityDao namedEntityDao;
 
 //  /**
 //   * For saving the results of the sentiment queries.
@@ -66,7 +66,7 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
               final GoogleCredential credential, final boolean hasEntitiesModule) {
     this.callbacks = callbacks;
     entryDao = db.getDiaryEntryDao();
-    namedEntityDao = db.getNamedEntityDao();
+    namedEntityDao = db.getDiaryNamedEntityDao();
 //    sentimentDao = db.getSentimentDao();
     this.hasEntitiesModule = hasEntitiesModule;
     api = new CloudNaturalLanguage.Builder(
@@ -81,7 +81,7 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
       if (!entry.isEntitiesAnalyzed() && hasEntitiesModule) {
         try {
           // Perform the query.
-          final Collection<NamedEntity> entryEntities = requestNamedEntities(entry);
+          final Collection<DiaryNamedEntity> entryEntities = requestNamedEntities(entry);
           // Save the entities.
           namedEntityDao.insertAll(entryEntities);
         } catch (final IOException e) {
@@ -113,13 +113,13 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
   }
 
   /**
-   * Query the GCNLAPI for named entities and create NamedEntity objects from the results.
+   * Query the GCNLAPI for named entities and create DiaryNamedEntity objects from the results.
    *
    * @param entry to analyze the text of
    * @return the named entities from the entry's text
    * @throws IOException querying the GCNLAPI
    */
-  private Collection<NamedEntity> requestNamedEntities(final DiaryEntry entry) throws IOException {
+  private Collection<DiaryNamedEntity> requestNamedEntities(final DiaryEntry entry) throws IOException {
     // Query the API.
     final AnalyzeEntitiesResponse entitiesResponse =
         api.documents().analyzeEntities(new AnalyzeEntitiesRequest()
@@ -127,15 +127,15 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
                 .setContent(entry.getText())
                 .setType("PLAIN_TEXT"))
             .setEncodingType("Utf16")).execute();
-    // Convert the results to NamedEntity objects.
+    // Convert the results to DiaryNamedEntity objects.
     final List<Entity> entities = entitiesResponse.getEntities();
     // Use a map for the entities to save to prevent duplicates. The API can count the same entity
     // more than once if it has multiple types (e.g. 1975 is both NUMBER and DATE)
-    final Map<NamedEntityKey, NamedEntity> namedEntities = new HashMap<>();
+    final Map<DiaryNamedEntityKey, DiaryNamedEntity> namedEntities = new HashMap<>();
     for (final Entity entity : entities) {
       // Iterate over all mentions of this entity in the entry
       for (final EntityMention mention : entity.getMentions()) {
-        final NamedEntity namedEntity = new NamedEntity();
+        final DiaryNamedEntity namedEntity = new DiaryNamedEntity();
         namedEntity.setEntryId(entry.getId());
         namedEntity.setName(entity.getName());
         namedEntity.setType(entity.getType());
@@ -144,8 +144,8 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
         namedEntity.setContent(mention.getText().getContent());
         // Before adding, see if this entity already exists. If so, just append the type onto the
         // existing entity's type, separated by a comma
-        final NamedEntityKey key = new NamedEntityKey(namedEntity, mention);
-        final NamedEntity existingEntity = namedEntities.get(key);
+        final DiaryNamedEntityKey key = new DiaryNamedEntityKey(namedEntity, mention);
+        final DiaryNamedEntity existingEntity = namedEntities.get(key);
         if (existingEntity == null) {
           namedEntities.put(key, namedEntity);
         } else {
@@ -157,11 +157,11 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
   }
 
   @EqualsAndHashCode
-  private class NamedEntityKey {
+  private class DiaryNamedEntityKey {
     Long entryId;
     String name;
     int beginOffset;
-    private NamedEntityKey(final NamedEntity entity, final EntityMention mention) {
+    private DiaryNamedEntityKey(final DiaryNamedEntity entity, final EntityMention mention) {
       entryId = entity.getEntryId();
       name = entity.getName();
       beginOffset = mention.getText().getBeginOffset();

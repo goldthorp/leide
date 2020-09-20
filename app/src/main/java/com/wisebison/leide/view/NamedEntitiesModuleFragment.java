@@ -22,9 +22,9 @@ import com.google.android.gms.common.util.CollectionUtils;
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.DiaryEntryDao;
-import com.wisebison.leide.data.NamedEntityDao;
+import com.wisebison.leide.data.DiaryNamedEntityDao;
+import com.wisebison.leide.model.DiaryNamedEntityForm;
 import com.wisebison.leide.model.Module;
-import com.wisebison.leide.model.NamedEntityForm;
 
 import org.joda.time.DateTime;
 
@@ -45,7 +45,7 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
   private ProgressBar entitiesProgressBar;
   private CarouselView carouselView;
 
-  private NamedEntityDao namedEntityDao;
+  private DiaryNamedEntityDao namedEntityDao;
   private DiaryEntryDao diaryEntryDao;
 
   private LiveData<Long> entityCountLiveData;
@@ -73,7 +73,7 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
 
     final AppDatabase db = AppDatabase.getInstance(requireContext());
 
-    namedEntityDao = db.getNamedEntityDao();
+    namedEntityDao = db.getDiaryNamedEntityDao();
     diaryEntryDao = db.getDiaryEntryDao();
 
     entityCountLiveData = namedEntityDao.getCount();
@@ -135,13 +135,13 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
 
       final DateTime earliest = earliestDate[0];
 
-      final NamedEntityDao namedEntityDao = fragment.namedEntityDao;
+      final DiaryNamedEntityDao namedEntityDao = fragment.namedEntityDao;
 
       final Map<String, SpannableString> results = new LinkedHashMap<>();
 
       // add 24 hrs
       final Pair<Long, Long> timeFrame24Hours = getTimeFrame(fragment.TIME_FRAME_ITEM_24_HOURS_ID);
-      final List<NamedEntityForm> namedEntityForms24Hours =
+      final List<DiaryNamedEntityForm> namedEntityForms24Hours =
         namedEntityDao.countEntitiesByName(timeFrame24Hours.first, timeFrame24Hours.second);
       results.put(fragment.getString(R.string.timeframe_24_hours),
         processEntities(namedEntityForms24Hours));
@@ -149,7 +149,7 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
       if (earliest.isBefore(DateTime.now().minusHours(24))) {
         // add 7 days
         final Pair<Long, Long> timeFrame7Days = getTimeFrame(fragment.TIME_FRAME_ITEM_WEEK_ID);
-        final List<NamedEntityForm> namedEntityForms7Days =
+        final List<DiaryNamedEntityForm> namedEntityForms7Days =
           namedEntityDao.countEntitiesByName(timeFrame7Days.first, timeFrame7Days.second);
         results.put(fragment.getString(R.string.timeframe_7_days),
           processEntities(namedEntityForms7Days));
@@ -157,7 +157,7 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
       if (earliest.isBefore(DateTime.now().minusDays(7))) {
         // add 30 days
         final Pair<Long, Long> timeFrame30Days = getTimeFrame(fragment.TIME_FRAME_ITEM_30_DAYS_ID);
-        final List<NamedEntityForm> namedEntityForms30Days =
+        final List<DiaryNamedEntityForm> namedEntityForms30Days =
           namedEntityDao.countEntitiesByName(timeFrame30Days.first, timeFrame30Days.second);
         results.put(fragment.getString(R.string.timeframe_30_days), 
           processEntities(namedEntityForms30Days));
@@ -200,7 +200,7 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
      * @param namedEntityForms entities to process (text + count)
      * @return SpannableString with spans set for font size and color
      */
-    private SpannableString processEntities(final List<NamedEntityForm> namedEntityForms) {
+    private SpannableString processEntities(final List<DiaryNamedEntityForm> namedEntityForms) {
       final NamedEntitiesModuleFragment fragment = fragmentReference.get();
       if (CollectionUtils.isEmpty(namedEntityForms)) {
         return null;
@@ -214,7 +214,7 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
       // Build the string and create the spans to apply to the SpannableString
       final StringBuilder sb = new StringBuilder();
       for (int i = 0; i < namedEntityForms.size(); i++) {
-        final NamedEntityForm entity = namedEntityForms.get(i);
+        final DiaryNamedEntityForm entity = namedEntityForms.get(i);
         final int start = sb.length();
         final int end = start + entity.getName().length();
         sb.append(entity.getName());
