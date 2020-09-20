@@ -2,6 +2,8 @@ package com.wisebison.leide.model;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.ForeignKey;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 import lombok.EqualsAndHashCode;
@@ -13,7 +15,15 @@ import lombok.ToString;
 @Setter
 @ToString
 @EqualsAndHashCode(of = {"name", "entryId", "beginOffset"})
-@Entity(tableName = "diary-named-entity")
+@Entity(tableName = "diary-named-entity",
+  foreignKeys = @ForeignKey(
+    entity = DiaryEntry.class,
+    parentColumns = "id",
+    childColumns = "entry_fk",
+    onDelete = ForeignKey.CASCADE),
+  indices = @Index(
+    name = "entry_fk",
+    value = "entry_fk"))
 public class DiaryNamedEntity {
   @PrimaryKey(autoGenerate = true)
   private Long id;
