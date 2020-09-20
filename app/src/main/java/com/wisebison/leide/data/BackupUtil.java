@@ -1,10 +1,14 @@
 package com.wisebison.leide.data;
 
+import android.app.AlertDialog;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.LiveData;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.android.gms.common.util.CollectionUtils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -14,6 +18,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 import com.wisebison.annotation.BackupEntity;
+import com.wisebison.leide.R;
 import com.wisebison.leide.view.MainActivity;
 
 import org.apache.commons.lang3.StringUtils;
@@ -38,11 +43,13 @@ import dalvik.system.DexFile;
  */
 public class BackupUtil {
 
-  private static final String TAG = "BACKUP";
+  private static final String TAG = "BackupUtil";
 
   private final DatabaseReference remoteDb;
   private final AppDatabase localDb;
   private final MainActivity mainActivity;
+
+  private boolean paused;
 
   public BackupUtil(final MainActivity mainActivity) {
     final FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -58,10 +65,182 @@ public class BackupUtil {
   }
 
   /**
+   * Backs up the logged in user's local database to the remote firebase database.
+   *
+   * Will only ever add data to the backup, never remove. This is done by reading the remote
+   * database first and checking that all the entries there are present locally (i.e. we check
+   * that the remote entries list is a subset of the local entries list). Any entries that are
+   * present locally but not remotely will be backed up (they must appear at the end of the
+   * local list; if there is somehow a new entry in the middle of the list, backup will fail).
+   *
+   * Performs backup on a background thread.
+   */
+  public void start() {
+    final FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+    if (currentUser == null) {
+      throw new IllegalStateException("must be logged in");
+    }
+    // Get a reference to the logged in user's node in the remote database
+    final DatabaseReference databaseReference =
+      FirebaseDatabase.getInstance().getReference(currentUser.getUid());
+
+    final List<LiveData<List<?>>> dataToBackUp = getDataToBackUp();
+    for (final LiveData<List<?>> liveData : dataToBackUp) {
+      liveData.observe(mainActivity, data -> {
+        if (paused) {
+          return;
+        }
+        if (!CollectionUtils.isEmpty(data)) {
+          final String nodeName =
+            Objects.requireNonNull(data.get(0).getClass().getAnnotation(BackupEntity.class)).name();
+          new BackupTask<>(databaseReference.child(nodeName), data, success -> {
+            if (!success) {
+              // Remote entries list was not a subset of local entries list. Backup failed.
+              new AlertDialog.Builder(mainActivity)
+                .setMessage(mainActivity.getString(R.string.backup_failed))
+                .show();
+            }
+          }).execute();
+        }
+      });
+    }
+  }
+
+  /**
+   * Get the LiveDatas we need to subscribe to to back up.
+   *
+   * @return a list of LiveData we need to subscribe to and back up on change
+   */
+  @SuppressWarnings("unchecked")
+  private List<LiveData<List<?>>> getDataToBackUp() {
+    final List<LiveData<List<?>>> data = new ArrayList<>();
+    final BackupEntityGeneratedDao dao = localDb.getBackupEntityGeneratedDao();
+    final Method[] methods = Objects.requireNonNull(dao.getClass()).getMethods();
+    for (final Method method : methods) {
+      if (StringUtils.startsWith(method.getName(), "_get")) {
+        try {
+          data.add((LiveData) method.invoke(dao));
+        } catch (final IllegalAccessException | InvocationTargetException e) {
+          Log.e(TAG, "failed to invoke method " + method, e);
+        }
+      }
+    }
+    return data;
+  }
+
+  /**
+   * Task to read contents of remote database, make sure they are a subset of the contents
+   * of the local database, and backup any local entries that are not present in remote.
+   */
+  private static class BackupTask<T> extends AsyncTask<Void, Void, Void> {
+
+    /**
+     * Reference to the remote database.
+     */
+    private final DatabaseReference dbRef;
+
+    /**
+     * To inform caller of backup success or failure.
+     */
+    private final BackupTaskCallback callback;
+
+    /**
+     * The data to back up. Includes all data from this table, must be a superset of the data
+     * currently stored remotely for this table.
+     */
+    private final List<T> localData;
+
+    BackupTask(final DatabaseReference dbRef, final List<T> localData,
+               final BackupTaskCallback callback) {
+      this.dbRef = dbRef;
+      this.callback = callback;
+      this.localData = localData;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    protected final Void doInBackground(final Void... voids) {
+      // Get the entries in the remote database
+      dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        @Override
+        public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
+          final GenericTypeIndicator<List<Map<String, Object>>> genericTypeIndicator =
+            new GenericTypeIndicator<List<Map<String, Object>>>() {
+            };
+
+          final List<Map<String, Object>> snapshotValue = dataSnapshot.getValue(genericTypeIndicator);
+          final List<T> remoteData = new ArrayList<>();
+          // List is null if remote database is empty
+          if (snapshotValue != null) {
+            remoteData.addAll(deserialize(snapshotValue, (Class<T>) localData.get(0).getClass()));
+          }
+          final boolean success = processBackup(localData, remoteData);
+          callback.resolve(success);
+        }
+
+        @Override
+        public void onCancelled(@NonNull final DatabaseError databaseError) {
+          Log.e(TAG, "Remote database error: " + databaseError.getMessage(),
+            databaseError.toException());
+        }
+      });
+      return null;
+    }
+
+    /**
+     * Check that remoteData is a subset of localData, and if so, write any values present
+     * in localData and absent in remoteData to the remote database.
+     *
+     * @param localData  locally saved data (array due to varargs)
+     * @param remoteData remotely saved data
+     * @return false if remoteData is not a subset of localData; true if backup succeeded
+     */
+    private boolean processBackup(final List<T> localData, final List<T> remoteData) {
+      if (remoteData.size() > localData.size()) {
+        return false;
+      }
+      for (int i = 0; i < remoteData.size(); i++) {
+        final T local = localData.get(i);
+        final T remote = remoteData.get(i);
+        if (!local.equals(remote)) {
+          return false;
+        }
+      }
+      // Add the entries present locally but absent remotely to the remote database
+      for (int i = 0; i < localData.size(); i++) {
+        dbRef.child(String.valueOf(i)).setValue(localData.get(i));
+      }
+      return true;
+    }
+
+    /**
+     * Convert the data in the specified maps to instances of the specified class. The keys in
+     * the map must match the field names in the class.
+     *
+     * @param data   data for new object
+     * @param tClass class of new object
+     * @return a list of objects of the specified type
+     */
+    private List<T> deserialize(final List<Map<String, Object>> data, final Class<T> tClass) {
+      final List<T> results = new ArrayList<>();
+      for (final Map<String, Object> object : data) {
+        final ObjectMapper om = new ObjectMapper();
+        results.add(om.convertValue(object, tClass));
+      }
+      return results;
+    }
+  }
+
+  private interface BackupTaskCallback {
+    void resolve(boolean success);
+  }
+
+  /**
    * Restore the backup from the remote Firebase database. This will delete all local data for
    * entities annotated with @BackupEntity and replace it with data from the Firebase backup.
    */
   public void restore() {
+    paused = true;
     remoteDb.addListenerForSingleValueEvent(new ValueEventListener() {
       @Override
       public void onDataChange(@NonNull final DataSnapshot snapshot) {
@@ -87,12 +266,14 @@ public class BackupUtil {
               try {
                 deleteMethod.invoke(localDb.getBackupEntityGeneratedDao());
                 insertMethod.invoke(localDb.getBackupEntityGeneratedDao(), objects);
+                paused = false;
               } catch (final IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
               }
             });
           }
         } else {
+          paused = false;
           // TODO: handle empty snapshot?
         }
       }
@@ -100,6 +281,7 @@ public class BackupUtil {
       @Override
       public void onCancelled(@NonNull final DatabaseError error) {
         Log.e(TAG, error.getMessage(), error.toException());
+        paused = false;
       }
     });
   }

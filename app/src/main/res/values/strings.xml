@@ -23,4 +23,5 @@
     <string name="timeframe_30_days">Past 30 days</string>
     <string name="timeframe_year">Past year</string>
     <string name="timeframe_all_time">All time</string>
+    <string name="backup_failed">Backup failed</string>
 </resources>

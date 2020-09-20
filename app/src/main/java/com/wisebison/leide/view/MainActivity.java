@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
       startActivityForResult(intent, LOGIN_REQUEST_CODE);
     } else {
       backupUtil = new BackupUtil(this);
+      backupUtil.start();
     }
 
     addModules(new DiaryModuleFragment());
@@ -116,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
     super.onActivityResult(requestCode, resultCode, data);
     if (requestCode == LOGIN_REQUEST_CODE && resultCode == RESULT_OK) {
       backupUtil = new BackupUtil(this);
+      backupUtil.start();
     }
   }
 

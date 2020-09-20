@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import com.google.firebase.database.Exclude;
 import com.wisebison.annotation.BackupEntity;
 
 import java.io.Serializable;
@@ -33,9 +34,12 @@ public class DiaryEntry implements Comparable<DiaryEntry>, Serializable {
 
   private String timeZone;
 
+  @Getter(onMethod=@__({@Exclude}))
   @ColumnInfo(name = "entities_analyzed")
   private boolean entitiesAnalyzed;
 
+  @Getter(onMethod=@__({@Exclude}))
+  @Exclude
   @ColumnInfo(name = "sentiment_analyzed")
   private boolean sentimentAnalyzed;
 
