@@ -9,16 +9,23 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.language.v1.CloudNaturalLanguage;
 import com.google.api.services.language.v1.model.AnalyzeEntitiesRequest;
 import com.google.api.services.language.v1.model.AnalyzeEntitiesResponse;
+import com.google.api.services.language.v1.model.AnalyzeSentimentRequest;
+import com.google.api.services.language.v1.model.AnalyzeSentimentResponse;
 import com.google.api.services.language.v1.model.Document;
 import com.google.api.services.language.v1.model.Entity;
 import com.google.api.services.language.v1.model.EntityMention;
+import com.google.api.services.language.v1.model.Sentence;
+import com.google.api.services.language.v1.model.Sentiment;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.DiaryEntryDao;
 import com.wisebison.leide.data.DiaryNamedEntityDao;
+import com.wisebison.leide.data.DiarySentimentDao;
 import com.wisebison.leide.model.DiaryEntry;
 import com.wisebison.leide.model.DiaryNamedEntity;
+import com.wisebison.leide.model.DiarySentiment;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -50,12 +57,14 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
    */
   private final DiaryNamedEntityDao namedEntityDao;
 
-//  /**
-//   * For saving the results of the sentiment queries.
-//   */
-//  private final SentimentDao sentimentDao;
+  /**
+   * For saving the results of the sentiment queries.
+   */
+  private final DiarySentimentDao sentimentDao;
 
   private final boolean hasEntitiesModule;
+
+  private final boolean hasSentimentModule;
 
   /**
    * The API.
@@ -63,12 +72,14 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
   private final CloudNaturalLanguage api;
 
   AnalyzeTask(final Callbacks callbacks, final AppDatabase db,
-              final GoogleCredential credential, final boolean hasEntitiesModule) {
+              final GoogleCredential credential, final boolean hasEntitiesModule,
+              final boolean hasSentimentModule) {
     this.callbacks = callbacks;
     entryDao = db.getDiaryEntryDao();
     namedEntityDao = db.getDiaryNamedEntityDao();
-//    sentimentDao = db.getSentimentDao();
+    sentimentDao = db.getDiarySentimentDao();
     this.hasEntitiesModule = hasEntitiesModule;
+    this.hasSentimentModule = hasSentimentModule;
     api = new CloudNaturalLanguage.Builder(
         new NetHttpTransport(), JacksonFactory.getDefaultInstance(), credential).build();
   }
@@ -85,23 +96,23 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
           // Save the entities.
           namedEntityDao.insertAll(entryEntities);
         } catch (final IOException e) {
-          e.printStackTrace();
+          Log.e(TAG, "failed to analyze entities", e);
         }
         // Mark this entry as analyzed.
         entry.setEntitiesAnalyzed(true);
       }
-//      if (!entry.isSentimentAnalyzed()) {
-//        try {
-//          // Perform the query
-//          final Sentiment sentiment = requestSentiment(entry);
-//          // Save the sentiment
-//          sentimentDao.insert(sentiment);
-//        } catch (final IOException e) {
-//          e.printStackTrace();
-//        }
-//        // Mark this entry as analyzed
-//        entry.setSentimentAnalyzed(true);
-//      }
+      if (!entry.isSentimentAnalyzed() && hasSentimentModule) {
+        try {
+          // Perform the query
+          final Collection<DiarySentiment> sentiments = requestSentiment(entry);
+          // Save the sentiment
+          sentimentDao.insertAll(sentiments);
+        } catch (final IOException e) {
+          Log.e(TAG, "failed to analyze sentiment", e);
+        }
+        // Mark this entry as analyzed
+        entry.setSentimentAnalyzed(true);
+      }
       // Notify UI of number of entries analyzed
       publishProgress(++analyzedCount);
     }
@@ -168,28 +179,41 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
     }
   }
 
-//  /**
-//   * Query the GCNLAPI for sentiment and create a Sentiment object from the results.
-//   *
-//   * @param entry to analyze the text of
-//   * @return the sentiment of the text for the entry
-//   * @throws IOException querying the GCNLAPI
-//   */
-//  private Sentiment requestSentiment(final Entry entry) throws IOException {
-//    final AnalyzeSentimentResponse sentimentResponse =
-//        api.documents().analyzeSentiment(new AnalyzeSentimentRequest()
-//            .setDocument(new Document()
-//                .setContent(entry.getText())
-//                .setType("PLAIN_TEXT"))).execute();
-//    // Convert the results to Sentiment objects
-//    final com.google.api.services.language.v1.model.Sentiment documentSentiment =
-//        sentimentResponse.getDocumentSentiment();
-//    final Sentiment sentiment = new Sentiment();
-//    sentiment.setEntryId(entry.getId());
-//    sentiment.setScore(documentSentiment.getScore());
-//    sentiment.setMagnitude(documentSentiment.getMagnitude());
-//    return sentiment;
-//  }
+  /**
+   * Query the GCNLAPI for sentiment and create a Sentiment object from the results.
+   *
+   * @param entry to analyze the text of
+   * @return the sentiment of the text for the entry
+   * @throws IOException querying the GCNLAPI
+   */
+  private List<DiarySentiment> requestSentiment(final DiaryEntry entry) throws IOException {
+    final AnalyzeSentimentResponse sentimentResponse =
+        api.documents().analyzeSentiment(new AnalyzeSentimentRequest()
+          .setDocument(new Document()
+            .setContent(entry.getText())
+            .setType("PLAIN_TEXT"))
+          .setEncodingType("Utf16")).execute();
+    // Convert the results to Sentiment objects
+    final List<DiarySentiment> results = new ArrayList<>();
+    final Sentiment documentSentiment = sentimentResponse.getDocumentSentiment();
+    final DiarySentiment sentiment = new DiarySentiment();
+    sentiment.setEntryId(entry.getId());
+    sentiment.setScore(documentSentiment.getScore());
+    sentiment.setMagnitude(documentSentiment.getMagnitude());
+    results.add(sentiment);
+    for (final Sentence sentence : sentimentResponse.getSentences()) {
+      final DiarySentiment sentenceSentiment = new DiarySentiment();
+      sentenceSentiment.setEntryId(entry.getId());
+      sentenceSentiment.setScore(sentence.getSentiment().getScore());
+      sentenceSentiment.setMagnitude(sentence.getSentiment().getMagnitude());
+      final Integer beginOffset = sentence.getText().getBeginOffset();
+      sentenceSentiment.setSentenceBeginOffset(beginOffset);
+      sentenceSentiment.setSentenceEndOffset(
+        beginOffset + sentence.getText().getContent().length());
+      results.add(sentenceSentiment);
+    }
+    return results;
+  }
 
   @Override
   protected void onProgressUpdate(final Integer... values) {

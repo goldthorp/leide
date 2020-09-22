@@ -33,6 +33,9 @@ public class AnalyzeUtil {
   @Setter
   private boolean hasEntitiesModule;
 
+  @Setter
+  private boolean hasSentimentModule;
+
   private static AnalyzeUtil INSTANCE;
 
   public static AnalyzeUtil getInstance(final MainActivity mainActivity) {
@@ -114,7 +117,7 @@ public class AnalyzeUtil {
         final GoogleCredential credential = new GoogleCredential()
           .setAccessToken(token)
           .createScoped(CloudNaturalLanguageScopes.all());
-        new AnalyzeTask(taskCallbacks, db, credential, hasEntitiesModule)
+        new AnalyzeTask(taskCallbacks, db, credential, hasEntitiesModule, hasSentimentModule)
           .execute(entries.toArray(new DiaryEntry[0]));
       });
     }
@@ -125,7 +128,9 @@ public class AnalyzeUtil {
       if (hasEntitiesModule && !entry.isEntitiesAnalyzed()) {
         return true;
       }
-//      if (hass)
+      if (hasSentimentModule && !entry.isSentimentAnalyzed()) {
+        return true;
+      }
     }
     return false;
   }

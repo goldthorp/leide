@@ -22,7 +22,7 @@ import lombok.ToString;
     childColumns = "entry_fk",
     onDelete = ForeignKey.CASCADE),
   indices = @Index(
-    name = "entry_fk",
+    name = "named_entity_entry_fk",
     value = "entry_fk"))
 public class DiaryNamedEntity {
   @PrimaryKey(autoGenerate = true)

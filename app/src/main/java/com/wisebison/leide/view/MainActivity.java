@@ -82,6 +82,10 @@ public class MainActivity extends AppCompatActivity {
             analyzeUtil.setHasEntitiesModule(true);
             analyzeUtil.start();
           }
+          if (ModuleType.SENTIMENT.equals(module.getModuleType())) {
+            analyzeUtil.setHasSentimentModule(true);
+            analyzeUtil.start();
+          }
         }
       }
       final Iterator<ModuleType> iterator = addedModules.keySet().iterator();
@@ -93,6 +97,9 @@ public class MainActivity extends AppCompatActivity {
           iterator.remove();
           if (ModuleType.NAMED_ENTITIES.equals(addedModule)) {
             analyzeUtil.setHasEntitiesModule(false);
+          }
+          if (ModuleType.SENTIMENT.equals(addedModule)) {
+            analyzeUtil.setHasSentimentModule(false);
           }
         }
       }

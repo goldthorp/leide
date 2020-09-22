@@ -22,6 +22,7 @@ public abstract class AppDatabase extends RoomDatabase {
 
   public abstract DiaryEntryDao getDiaryEntryDao();
   public abstract DiaryNamedEntityDao getDiaryNamedEntityDao();
+  public abstract DiarySentimentDao getDiarySentimentDao();
 
   public abstract ModuleDao getModuleDao();
 
