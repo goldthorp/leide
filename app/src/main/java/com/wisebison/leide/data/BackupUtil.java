@@ -93,14 +93,25 @@ public class BackupUtil {
         if (!CollectionUtils.isEmpty(data)) {
           final String nodeName =
             Objects.requireNonNull(data.get(0).getClass().getAnnotation(BackupEntity.class)).name();
-          new BackupTask<>(databaseReference.child(nodeName), data, success -> {
-            if (!success) {
-              // Remote entries list was not a subset of local entries list. Backup failed.
-              new AlertDialog.Builder(mainActivity)
-                .setMessage(mainActivity.getString(R.string.backup_failed))
-                .show();
+          final DatabaseReference ref = databaseReference.child(nodeName);
+          ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull final DataSnapshot snapshot) {
+              new BackupTask<>(snapshot, ref, data, success -> {
+                if (!success) {
+                  // Remote entries list was not a subset of local entries list. Backup failed.
+                  new AlertDialog.Builder(mainActivity)
+                    .setMessage(mainActivity.getString(R.string.backup_failed))
+                    .show();
+                }
+              }).execute();
             }
-          }).execute();
+
+            @Override
+            public void onCancelled(@NonNull final DatabaseError error) {
+              Log.e(TAG, "Remote database error: " + error.getMessage(), error.toException());
+            }
+          });
         }
       });
     }
@@ -132,12 +143,20 @@ public class BackupUtil {
    * Task to read contents of remote database, make sure they are a subset of the contents
    * of the local database, and backup any local entries that are not present in remote.
    */
-  private static class BackupTask<T> extends AsyncTask<Void, Void, Void> {
+  private static class BackupTask<T> extends AsyncTask<Void, Void, Boolean> {
 
     /**
-     * Reference to the remote database.
+     * Reference to the remote database - for writing the data to. We don't read data from this
+     * in doInBackground (we pass in the DataSnapshot instead) because
+     * ValueEventListener::onDataChange would end up executing on the main thread.
      */
     private final DatabaseReference dbRef;
+
+    /**
+     * The current state of the remote database - for checking that the local data is a superset
+     * of the remote data.
+     */
+    private final DataSnapshot dataSnapshot;
 
     /**
      * To inform caller of backup success or failure.
@@ -150,41 +169,28 @@ public class BackupUtil {
      */
     private final List<T> localData;
 
-    BackupTask(final DatabaseReference dbRef, final List<T> localData,
-               final BackupTaskCallback callback) {
+    BackupTask(final DataSnapshot dataSnapshot, final DatabaseReference dbRef,
+               final List<T> localData, final BackupTaskCallback callback) {
       this.dbRef = dbRef;
+      this.dataSnapshot = dataSnapshot;
       this.callback = callback;
       this.localData = localData;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    protected final Void doInBackground(final Void... voids) {
+    protected final Boolean doInBackground(final Void... voids) {
       // Get the entries in the remote database
-      dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
-        @Override
-        public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
-          final GenericTypeIndicator<List<Map<String, Object>>> genericTypeIndicator =
-            new GenericTypeIndicator<List<Map<String, Object>>>() {
-            };
+      final GenericTypeIndicator<List<Map<String, Object>>> genericTypeIndicator =
+        new GenericTypeIndicator<List<Map<String, Object>>>() {};
 
-          final List<Map<String, Object>> snapshotValue = dataSnapshot.getValue(genericTypeIndicator);
-          final List<T> remoteData = new ArrayList<>();
-          // List is null if remote database is empty
-          if (snapshotValue != null) {
-            remoteData.addAll(deserialize(snapshotValue, (Class<T>) localData.get(0).getClass()));
-          }
-          final boolean success = processBackup(localData, remoteData);
-          callback.resolve(success);
-        }
-
-        @Override
-        public void onCancelled(@NonNull final DatabaseError databaseError) {
-          Log.e(TAG, "Remote database error: " + databaseError.getMessage(),
-            databaseError.toException());
-        }
-      });
-      return null;
+      final List<Map<String, Object>> snapshotValue = dataSnapshot.getValue(genericTypeIndicator);
+      final List<T> remoteData = new ArrayList<>();
+      // List is null if remote database is empty
+      if (snapshotValue != null) {
+        remoteData.addAll(deserialize(snapshotValue, (Class<T>) localData.get(0).getClass()));
+      }
+      return processBackup(localData, remoteData);
     }
 
     /**
@@ -228,6 +234,11 @@ public class BackupUtil {
         results.add(om.convertValue(object, tClass));
       }
       return results;
+    }
+
+    @Override
+    protected void onPostExecute(final Boolean success) {
+      callback.resolve(success);
     }
   }
 

@@ -74,10 +74,10 @@ public class MainActivity extends AppCompatActivity {
       final List<ModuleType> currentModules = new ArrayList<>();
       for (final Module module : modules) {
         final ModuleFragment fragment = module.getFragment();
+        currentModules.add(module.getModuleType());
         if (fragment != null && !addedModules.containsKey(module.getModuleType())) {
           addModules(fragment);
           addedModules.put(module.getModuleType(), fragment);
-          currentModules.add(module.getModuleType());
           if (ModuleType.NAMED_ENTITIES.equals(module.getModuleType())) {
             analyzeUtil.setHasEntitiesModule(true);
             analyzeUtil.start();

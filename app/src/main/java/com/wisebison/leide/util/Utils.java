@@ -11,8 +11,11 @@ public class Utils {
    * @param f float to format
    * @return float as string in #.# format
    */
-  public static String formatFloat(final float f) {
-    final DecimalFormat df = new DecimalFormat("#.#");
+  public static String formatFloat(final float f, final boolean includePositiveSign) {
+    final DecimalFormat df = new DecimalFormat("#.##");
+    if (includePositiveSign) {
+      df.setPositivePrefix("+");
+    }
     return df.format(f);
   }
 

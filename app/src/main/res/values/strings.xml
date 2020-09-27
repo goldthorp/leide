@@ -24,4 +24,10 @@
     <string name="timeframe_year">Past year</string>
     <string name="timeframe_all_time">All time</string>
     <string name="backup_failed">Backup failed</string>
+
+    <string name="average_sentiment_label">Average sentiment: %s</string>
+    <string name="average_sentiment_24_hours_delta">(%s from previous 24 hours)</string>
+    <string name="average_sentiment_7_days_delta">(%s from previous 7 days)</string>
+    <string name="average_sentiment_30_days_delta">(%s from previous 30 days)</string>
+    <string name="most_positive_sentence_label">Most positive sentence:</string>
 </resources>

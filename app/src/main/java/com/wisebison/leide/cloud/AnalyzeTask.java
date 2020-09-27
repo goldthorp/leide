@@ -24,6 +24,8 @@ import com.wisebison.leide.model.DiaryEntry;
 import com.wisebison.leide.model.DiaryNamedEntity;
 import com.wisebison.leide.model.DiarySentiment;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -88,33 +90,37 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
   protected Void doInBackground(final DiaryEntry... entries) {
     // AnalyzeUtil the specified entries, save the results, and mark the entries as analyzed.
     int analyzedCount = 0;
+    final Collection<DiaryNamedEntity> entities = new ArrayList<>();
+    final Collection<DiarySentiment> sentiments = new ArrayList<>();
     for (final DiaryEntry entry : entries) {
       if (!entry.isEntitiesAnalyzed() && hasEntitiesModule) {
         try {
           // Perform the query.
-          final Collection<DiaryNamedEntity> entryEntities = requestNamedEntities(entry);
-          // Save the entities.
-          namedEntityDao.insertAll(entryEntities);
+          entities.addAll(requestNamedEntities(entry));
+          // Mark this entry as analyzed.
+          entry.setEntitiesAnalyzed(true);
         } catch (final IOException e) {
           Log.e(TAG, "failed to analyze entities", e);
         }
-        // Mark this entry as analyzed.
-        entry.setEntitiesAnalyzed(true);
       }
       if (!entry.isSentimentAnalyzed() && hasSentimentModule) {
         try {
           // Perform the query
-          final Collection<DiarySentiment> sentiments = requestSentiment(entry);
-          // Save the sentiment
-          sentimentDao.insertAll(sentiments);
+          sentiments.addAll(requestSentiment(entry));
+          // Mark this entry as analyzed
+          entry.setSentimentAnalyzed(true);
         } catch (final IOException e) {
           Log.e(TAG, "failed to analyze sentiment", e);
         }
-        // Mark this entry as analyzed
-        entry.setSentimentAnalyzed(true);
       }
       // Notify UI of number of entries analyzed
       publishProgress(++analyzedCount);
+    }
+    if (CollectionUtils.isNotEmpty(entities)) {
+      namedEntityDao.insertAll(entities);
+    }
+    if (CollectionUtils.isNotEmpty(sentiments)) {
+      sentimentDao.insertAll(sentiments);
     }
 
     // Save all entries to mark them as analyzed
@@ -208,8 +214,7 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
       sentenceSentiment.setMagnitude(sentence.getSentiment().getMagnitude());
       final Integer beginOffset = sentence.getText().getBeginOffset();
       sentenceSentiment.setSentenceBeginOffset(beginOffset);
-      sentenceSentiment.setSentenceEndOffset(
-        beginOffset + sentence.getText().getContent().length());
+      sentenceSentiment.setSentenceLength(sentence.getText().getContent().length());
       results.add(sentenceSentiment);
     }
     return results;
