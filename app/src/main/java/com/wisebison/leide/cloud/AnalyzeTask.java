@@ -95,11 +95,11 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
           final Collection<DiaryNamedEntity> entryEntities = requestNamedEntities(entry);
           // Save the entities.
           namedEntityDao.insertAll(entryEntities);
+          // Mark this entry as analyzed.
+          entry.setEntitiesAnalyzed(true);
         } catch (final IOException e) {
           Log.e(TAG, "failed to analyze entities", e);
         }
-        // Mark this entry as analyzed.
-        entry.setEntitiesAnalyzed(true);
       }
       if (!entry.isSentimentAnalyzed() && hasSentimentModule) {
         try {
@@ -107,11 +107,11 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
           final Collection<DiarySentiment> sentiments = requestSentiment(entry);
           // Save the sentiment
           sentimentDao.insertAll(sentiments);
+          // Mark this entry as analyzed
+          entry.setSentimentAnalyzed(true);
         } catch (final IOException e) {
           Log.e(TAG, "failed to analyze sentiment", e);
         }
-        // Mark this entry as analyzed
-        entry.setSentimentAnalyzed(true);
       }
       // Notify UI of number of entries analyzed
       publishProgress(++analyzedCount);
