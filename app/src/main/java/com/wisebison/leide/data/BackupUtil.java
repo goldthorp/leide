@@ -143,7 +143,7 @@ public class BackupUtil {
    * Task to read contents of remote database, make sure they are a subset of the contents
    * of the local database, and backup any local entries that are not present in remote.
    */
-  private static class BackupTask<T> extends AsyncTask<Void, Void, Void> {
+  private static class BackupTask<T> extends AsyncTask<Void, Void, Boolean> {
 
     /**
      * Reference to the remote database - for writing the data to. We don't read data from this
@@ -179,7 +179,7 @@ public class BackupUtil {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected final Void doInBackground(final Void... voids) {
+    protected final Boolean doInBackground(final Void... voids) {
       // Get the entries in the remote database
       final GenericTypeIndicator<List<Map<String, Object>>> genericTypeIndicator =
         new GenericTypeIndicator<List<Map<String, Object>>>() {};
@@ -190,10 +190,7 @@ public class BackupUtil {
       if (snapshotValue != null) {
         remoteData.addAll(deserialize(snapshotValue, (Class<T>) localData.get(0).getClass()));
       }
-      final boolean success = processBackup(localData, remoteData);
-      callback.resolve(success);
-
-      return null;
+      return processBackup(localData, remoteData);
     }
 
     /**
@@ -237,6 +234,11 @@ public class BackupUtil {
         results.add(om.convertValue(object, tClass));
       }
       return results;
+    }
+
+    @Override
+    protected void onPostExecute(final Boolean success) {
+      callback.resolve(success);
     }
   }
 
