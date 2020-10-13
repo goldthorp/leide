@@ -37,6 +37,7 @@ dependencies {
 
     // Apache commons lang
     implementation 'org.apache.commons:commons-lang3:3.9'
+    implementation 'org.apache.commons:commons-collections4:4.4'
 
     // Local annotation processor
     implementation project(path: ':processor')

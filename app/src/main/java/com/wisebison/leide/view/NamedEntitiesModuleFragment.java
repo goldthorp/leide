@@ -21,7 +21,6 @@ import androidx.lifecycle.LiveData;
 import com.google.android.gms.common.util.CollectionUtils;
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.DiaryEntryDao;
 import com.wisebison.leide.data.DiaryNamedEntityDao;
 import com.wisebison.leide.model.DiaryNamedEntityForm;
 import com.wisebison.leide.model.Module;
@@ -37,24 +36,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class NamedEntitiesModuleFragment extends ModuleFragment {
+public class NamedEntitiesModuleFragment extends TimeFrameModuleFragment {
   public NamedEntitiesModuleFragment(final Module module) {
     super(module);
   }
 
   private ProgressBar entitiesProgressBar;
-  private CarouselView carouselView;
 
   private DiaryNamedEntityDao namedEntityDao;
-  private DiaryEntryDao diaryEntryDao;
 
   private LiveData<Long> entityCountLiveData;
   private Long entityCount;
-
-  private final int TIME_FRAME_ITEM_24_HOURS_ID = 1004;
-  private final int TIME_FRAME_ITEM_WEEK_ID = 1003;
-  private final int TIME_FRAME_ITEM_30_DAYS_ID = 1002;
-  private final int TIME_FRAME_ITEM_YEAR_ID = 1001;
 
   @Override
   int getLayoutResource() {
@@ -74,7 +66,6 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
     final AppDatabase db = AppDatabase.getInstance(requireContext());
 
     namedEntityDao = db.getDiaryNamedEntityDao();
-    diaryEntryDao = db.getDiaryEntryDao();
 
     entityCountLiveData = namedEntityDao.getCount();
 
@@ -89,7 +80,7 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
         entityCount = count;
         // Get timestamp of earliest entry to determine what the earliest timeframe to display
         // in the carousel is.
-        diaryEntryDao.getEarliestTimestamp().then(earliestTimeStamp -> {
+        getEarliestTimestamp(earliestTimeStamp -> {
           carouselView.stop();
           carouselView.removeAllViews();
           carouselView.setVisibility(View.GONE);
@@ -140,7 +131,7 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
       final Map<String, SpannableString> results = new LinkedHashMap<>();
 
       // add 24 hrs
-      final Pair<Long, Long> timeFrame24Hours = getTimeFrame(fragment.TIME_FRAME_ITEM_24_HOURS_ID);
+      final Pair<Long, Long> timeFrame24Hours = getTimeFrame(TIME_FRAME_ITEM_24_HOURS_ID);
       final List<DiaryNamedEntityForm> namedEntityForms24Hours =
         namedEntityDao.countEntitiesByName(timeFrame24Hours.first, timeFrame24Hours.second);
       results.put(fragment.getString(R.string.timeframe_24_hours),
@@ -148,7 +139,7 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
 
       if (earliest.isBefore(DateTime.now().minusHours(24))) {
         // add 7 days
-        final Pair<Long, Long> timeFrame7Days = getTimeFrame(fragment.TIME_FRAME_ITEM_WEEK_ID);
+        final Pair<Long, Long> timeFrame7Days = getTimeFrame(TIME_FRAME_ITEM_7_DAYS_ID);
         final List<DiaryNamedEntityForm> namedEntityForms7Days =
           namedEntityDao.countEntitiesByName(timeFrame7Days.first, timeFrame7Days.second);
         results.put(fragment.getString(R.string.timeframe_7_days),
@@ -156,41 +147,13 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
       }
       if (earliest.isBefore(DateTime.now().minusDays(7))) {
         // add 30 days
-        final Pair<Long, Long> timeFrame30Days = getTimeFrame(fragment.TIME_FRAME_ITEM_30_DAYS_ID);
+        final Pair<Long, Long> timeFrame30Days = getTimeFrame(TIME_FRAME_ITEM_30_DAYS_ID);
         final List<DiaryNamedEntityForm> namedEntityForms30Days =
           namedEntityDao.countEntitiesByName(timeFrame30Days.first, timeFrame30Days.second);
         results.put(fragment.getString(R.string.timeframe_30_days), 
           processEntities(namedEntityForms30Days));
       }
       return results;
-    }
-
-    /**
-     * Get the millis for the start and end time based on the given time frame.
-     *
-     * @param timeFrameItemId time frame to get start/end millis for (ID of menu item for time frame)
-     * @return pair of longs where first is start, second is end
-     */
-    private Pair<Long, Long> getTimeFrame(final int timeFrameItemId) {
-      final NamedEntitiesModuleFragment fragment = fragmentReference.get();
-      final long currentMillis = System.currentTimeMillis();
-      final long oneDayInMillis = 24 * 60 * 60 * 1000;
-      final long oneWeekInMillis = oneDayInMillis * 7;
-      final long thirtyDaysInMillis = oneDayInMillis * 30;
-      final long oneYearInMillis = oneDayInMillis * 365;
-      final long startMillis;
-      if (timeFrameItemId == fragment.TIME_FRAME_ITEM_24_HOURS_ID) {
-        startMillis = currentMillis - oneDayInMillis;
-      } else if (timeFrameItemId == fragment.TIME_FRAME_ITEM_WEEK_ID) {
-        startMillis = currentMillis - oneWeekInMillis;
-      } else if (timeFrameItemId == fragment.TIME_FRAME_ITEM_30_DAYS_ID) {
-        startMillis = currentMillis - thirtyDaysInMillis;
-      } else if (timeFrameItemId == fragment.TIME_FRAME_ITEM_YEAR_ID) {
-        startMillis = currentMillis - oneYearInMillis;
-      } else {
-        throw new IllegalArgumentException("Illegal time frame id " + timeFrameItemId);
-      }
-      return Pair.create(startMillis, currentMillis);
     }
 
     /**
@@ -297,7 +260,7 @@ public class NamedEntitiesModuleFragment extends ModuleFragment {
 
       fragment.carouselView.setVisibility(View.VISIBLE);
       fragment.entitiesProgressBar.setVisibility(View.GONE);
-      fragment.carouselView.start(5000);
+      fragment.carouselView.start(5000, "TIME_FRAME");
     }
   }
 }

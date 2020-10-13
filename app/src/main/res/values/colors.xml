@@ -9,4 +9,7 @@
 
     <color name="entity_text_dark">#676767</color>
     <color name="entity_text_light">#8d8d8d</color>
+
+    <color name="sentiment_positive">#4CAF50</color>
+    <color name="sentiment_negative">#F44336</color>
 </resources>

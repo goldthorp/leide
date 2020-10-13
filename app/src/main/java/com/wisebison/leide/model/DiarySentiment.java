@@ -33,8 +33,8 @@ public class DiarySentiment {
   @ColumnInfo(name = "sentence_begin_offset")
   private Integer sentenceBeginOffset;
 
-  @ColumnInfo(name = "sentence_end_offset")
-  private Integer sentenceEndOffset;
+  @ColumnInfo(name = "sentence_length")
+  private Integer sentenceLength;
 
   @ColumnInfo(name = "entry_fk")
   private Long entryId;
