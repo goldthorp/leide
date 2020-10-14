@@ -16,22 +16,15 @@ public class CarouselClock {
   private static CarouselClock INSTANCE;
 
   private final List<Action> actions;
+  private final int timeoutMillis;
   private final Handler handler;
+  private boolean handlerHasCallbacks = false;
   private final Map<String, Integer> indexes;
   private CarouselClock(final int timeoutMillis) {
     actions = new ArrayList<>();
+    this.timeoutMillis = timeoutMillis;
     indexes = new HashMap<>();
     handler = new Handler();
-    handler.postDelayed(new Runnable() {
-      @Override
-      public void run() {
-        for (final Action action : actions) {
-          final Pair<String, Integer> indexIdAndIndex = action.action();
-          indexes.put(indexIdAndIndex.first, indexIdAndIndex.second);
-        }
-        handler.postDelayed(this, timeoutMillis);
-      }
-    }, timeoutMillis);
   }
 
   public static CarouselClock getInstance(final int timeoutMillis) {
@@ -41,10 +34,27 @@ public class CarouselClock {
     return INSTANCE;
   }
 
+  private Runnable getHandlerCallback() {
+    return new Runnable() {
+      @Override
+      public void run() {
+        for (final Action action : actions) {
+          final Pair<String, Integer> indexIdAndIndex = action.action();
+          indexes.put(indexIdAndIndex.first, indexIdAndIndex.second);
+        }
+        handler.postDelayed(this, timeoutMillis);
+      }
+    };
+  }
+
   public void addAction(final Action action, final String indexId) {
     actions.add(action);
     if (StringUtils.isNotBlank(indexId) && !indexes.containsKey(indexId)) {
       indexes.put(indexId, 0);
+    }
+    if (!handlerHasCallbacks) {
+      handler.postDelayed(getHandlerCallback(), timeoutMillis);
+      handlerHasCallbacks = true;
     }
   }
 
@@ -57,6 +67,7 @@ public class CarouselClock {
     actions.remove(action);
     if (CollectionUtils.isEmpty(actions)) {
       handler.removeCallbacksAndMessages(null);
+      handlerHasCallbacks = false;
     }
   }
 
