@@ -109,22 +109,20 @@ public class BillingUtil implements PurchasesUpdatedListener {
   }
 
   private void handlePurchase(final Purchase purchase) {
-//    if (purchase.getSku().equals(sku)) {
-      if (!purchase.isAcknowledged()) {
-        final AcknowledgePurchaseParams acknowledgePurchaseParams =
-          AcknowledgePurchaseParams.newBuilder()
-            .setPurchaseToken(purchase.getPurchaseToken())
-            .build();
-        billingClient.acknowledgePurchase(acknowledgePurchaseParams, billingResult -> {
-          if(billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
-            onPurchasesUpdatedListener.onPurchasesUpdated();
-            Log.d("TEST", "purchase acknowledged");
-          }
-        });
-      } else {
-        Log.d("TEST", "purchase already acknowledged");
-      }
-//    }
+    if (!purchase.isAcknowledged()) {
+      final AcknowledgePurchaseParams acknowledgePurchaseParams =
+        AcknowledgePurchaseParams.newBuilder()
+          .setPurchaseToken(purchase.getPurchaseToken())
+          .build();
+      billingClient.acknowledgePurchase(acknowledgePurchaseParams, billingResult -> {
+        if(billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+          onPurchasesUpdatedListener.onPurchasesUpdated();
+          Log.d("TEST", "purchase acknowledged");
+        }
+      });
+    } else {
+      Log.d("TEST", "purchase already acknowledged");
+    }
   }
 
   public boolean isPurchased(final String sku) {
