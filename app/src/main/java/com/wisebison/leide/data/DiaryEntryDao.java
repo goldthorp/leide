@@ -19,7 +19,7 @@ public abstract class DiaryEntryDao {
   @Query("SELECT COUNT(*) FROM `diary-entry`")
   public abstract LiveData<Long> getCount();
 
-  @Query("SELECT location FROM `diary-entry` GROUP BY location ORDER BY id DESC LIMIT 5")
+  @Query("SELECT location FROM `diary-entry` GROUP BY location ORDER BY MAX(id) DESC LIMIT 5")
   public abstract LiveData<List<String>> getRecentLocations();
 
   @Query("SELECT * FROM `diary-entry` WHERE id = :entryId")
