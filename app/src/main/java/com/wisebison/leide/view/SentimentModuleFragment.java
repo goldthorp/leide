@@ -22,7 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
 public class SentimentModuleFragment extends TimeFrameModuleFragment {
+  // Invoked using reflection in Module
   public SentimentModuleFragment(final Module module) {
     super(module);
   }

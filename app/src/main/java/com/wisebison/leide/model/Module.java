@@ -9,6 +9,7 @@ import androidx.room.TypeConverters;
 
 import com.wisebison.leide.view.ModuleFragment;
 
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
@@ -18,7 +19,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity(tableName = "module")
-public class Module {
+public class Module implements Serializable {
   @PrimaryKey(autoGenerate = true)
   private Long id;
 

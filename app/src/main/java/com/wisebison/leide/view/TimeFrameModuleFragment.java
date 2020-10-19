@@ -14,6 +14,9 @@ import com.wisebison.leide.data.DiaryEntryDao;
 import com.wisebison.leide.model.Module;
 import com.wisebison.leide.util.RunInBackgroundTask;
 
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
 abstract class TimeFrameModuleFragment extends ModuleFragment {
 
   CarouselView carouselView;

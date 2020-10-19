@@ -1,6 +1,7 @@
 package com.wisebison.leide.view;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,12 +15,18 @@ import com.wisebison.leide.data.ModuleDao;
 import com.wisebison.leide.model.Module;
 import com.wisebison.leide.util.BackgroundUtil;
 
-import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
+@NoArgsConstructor
 public abstract class ModuleFragment extends Fragment {
 
-  private final Module module;
+  private static final String TAG = "ModuleFragment";
+
+  ModuleFragment(final Module module) {
+    final Bundle args = new Bundle();
+    args.putSerializable("module", module);
+    setArguments(args);
+  }
 
   @Nullable
   @Override
@@ -31,6 +38,16 @@ public abstract class ModuleFragment extends Fragment {
     final ModuleDao moduleDao = AppDatabase.getInstance(requireContext()).getModuleDao();
 
     setChildListener(rootView, v -> {
+      final Bundle args = getArguments();
+      if (args == null) {
+        Log.e(TAG, "Args not found");
+        return false;
+      }
+      final Module module = (Module) args.getSerializable("module");
+      if (module == null) {
+        Log.e(TAG, "Module not found");
+        return false;
+      }
       BackgroundUtil.doInBackgroundNow(() -> moduleDao.delete(module));
       return false;
     });

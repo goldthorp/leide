@@ -36,7 +36,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
 public class NamedEntitiesModuleFragment extends TimeFrameModuleFragment {
+  // Invoked using reflection in Module
   public NamedEntitiesModuleFragment(final Module module) {
     super(module);
   }
