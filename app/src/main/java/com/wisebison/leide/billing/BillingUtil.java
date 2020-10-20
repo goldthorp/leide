@@ -15,12 +15,14 @@ import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.SkuDetailsParams;
-import com.wisebison.leide.model.ModuleType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import lombok.Setter;
 
 public class BillingUtil implements PurchasesUpdatedListener {
 
@@ -34,16 +36,14 @@ public class BillingUtil implements PurchasesUpdatedListener {
 
   private OnPurchasesUpdatedListener onPurchasesUpdatedListener;
 
+  @Setter
+  private OnSkusLoadedListener onSkusLoadedListener;
+
   private final Activity activity;
 
   public BillingUtil(final Activity activity) {
     this.activity = activity;
-    allSkus = new ArrayList<>();
-    for (final ModuleType moduleType : ModuleType.values()) {
-      if (moduleType.getSku() != null) {
-        allSkus.add(moduleType.getSku());
-      }
-    }
+    allSkus = Collections.singletonList("pro_3_month");
     purchasedSkus = new ArrayList<>();
     billingClient =
       BillingClient.newBuilder(activity).enablePendingPurchases().setListener(this).build();
@@ -70,26 +70,32 @@ public class BillingUtil implements PurchasesUpdatedListener {
     }
     final SkuDetailsParams params = SkuDetailsParams.newBuilder()
       .setSkusList(allSkus)
-      .setType(BillingClient.SkuType.INAPP)
+      .setType(BillingClient.SkuType.SUBS)
       .build();
     billingClient.querySkuDetailsAsync(params, (billingResult, list) -> {
       if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK && list != null) {
         for (final SkuDetails skuDetails : list) {
           skuToDetails.put(skuDetails.getSku(), skuDetails);
         }
-        final Purchase.PurchasesResult purchasesResult =
-          billingClient.queryPurchases(BillingClient.SkuType.INAPP);
-        final List<Purchase> purchasesList = purchasesResult.getPurchasesList();
-        if (purchasesList != null) {
-          for (final Purchase purchase : purchasesList) {
-            if (!allSkus.contains(purchase.getSku())) {
-              throw new IllegalArgumentException("Unknown SKU " + purchase.getSku());
-            }
-            purchasedSkus.add(purchase.getSku());
-          }
+        if (onSkusLoadedListener != null) {
+          onSkusLoadedListener.onSkusLoaded();
         }
       }
     });
+  }
+
+  private void loadPurchases() {
+    purchasedSkus.clear();
+    final Purchase.PurchasesResult purchasesResult =
+      billingClient.queryPurchases(BillingClient.SkuType.SUBS);
+    final List<Purchase> purchasesList = purchasesResult.getPurchasesList();
+    if (purchasesList != null) {
+      for (final Purchase purchase : purchasesList) {
+        if (allSkus.contains(purchase.getSku())) {
+          purchasedSkus.add(purchase.getSku());
+        }
+      }
+    }
   }
 
   @Override
@@ -102,9 +108,9 @@ public class BillingUtil implements PurchasesUpdatedListener {
         purchasedSkus.add(purchase.getSku());
       }
     } else if (responseCode == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
-      Log.d("TEST", "item already owned");
+      Log.d(TAG, "item already owned");
     } else if (responseCode == BillingClient.BillingResponseCode.USER_CANCELED) {
-      Log.d("TEST", "purchase canceled");
+      Log.d(TAG, "purchase canceled");
     }
   }
 
@@ -117,19 +123,24 @@ public class BillingUtil implements PurchasesUpdatedListener {
       billingClient.acknowledgePurchase(acknowledgePurchaseParams, billingResult -> {
         if(billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
           onPurchasesUpdatedListener.onPurchasesUpdated();
-          Log.d("TEST", "purchase acknowledged");
+          Log.d(TAG, "purchase acknowledged");
         }
       });
     } else {
-      Log.d("TEST", "purchase already acknowledged");
+      Log.d(TAG, "purchase already acknowledged");
     }
   }
 
-  public boolean isPurchased(final String sku) {
+  private boolean isPurchased(final String sku) {
     if (!allSkus.contains(sku)) {
       throw new IllegalArgumentException();
     }
     return purchasedSkus.contains(sku);
+  }
+
+  public boolean hasPremium() {
+    loadPurchases();
+    return isPurchased("pro_3_month");
   }
 
   public String getPrice(final String sku) {
@@ -154,5 +165,9 @@ public class BillingUtil implements PurchasesUpdatedListener {
 
   public interface OnPurchasesUpdatedListener {
     void onPurchasesUpdated();
+  }
+
+  public interface OnSkusLoadedListener {
+    void onSkusLoaded();
   }
 }

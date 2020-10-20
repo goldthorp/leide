@@ -157,7 +157,7 @@ public class SentimentModuleFragment extends TimeFrameModuleFragment {
                 carouselItemView.setSentences(summary.sentences);
                 carouselView.addView(carouselItemView);
               }
-              carouselView.start(5000, "TIME_FRAME");
+              carouselView.start(5000, CAROUSEL_INDEX_ID);
             });
           }
         });

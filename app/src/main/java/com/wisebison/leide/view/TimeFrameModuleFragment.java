@@ -21,6 +21,8 @@ abstract class TimeFrameModuleFragment extends ModuleFragment {
 
   CarouselView carouselView;
 
+  final static String CAROUSEL_INDEX_ID = "TIME_FRAME";
+
   final static int TIME_FRAME_ITEM_24_HOURS_ID = 1001;
   final static int TIME_FRAME_ITEM_7_DAYS_ID = 1002;
   final static int TIME_FRAME_ITEM_30_DAYS_ID = 1003;

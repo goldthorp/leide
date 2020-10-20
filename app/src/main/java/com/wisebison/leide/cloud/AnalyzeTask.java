@@ -16,6 +16,7 @@ import com.google.api.services.language.v1.model.Entity;
 import com.google.api.services.language.v1.model.EntityMention;
 import com.google.api.services.language.v1.model.Sentence;
 import com.google.api.services.language.v1.model.Sentiment;
+import com.wisebison.leide.billing.BillingUtil;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.DiaryEntryDao;
 import com.wisebison.leide.data.DiaryNamedEntityDao;
@@ -64,24 +65,17 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
    */
   private final DiarySentimentDao sentimentDao;
 
-  private final boolean hasEntitiesModule;
-
-  private final boolean hasSentimentModule;
-
   /**
    * The API.
    */
   private final CloudNaturalLanguage api;
 
   AnalyzeTask(final Callbacks callbacks, final AppDatabase db,
-              final GoogleCredential credential, final boolean hasEntitiesModule,
-              final boolean hasSentimentModule) {
+              final GoogleCredential credential, final BillingUtil billingUtil) {
     this.callbacks = callbacks;
     entryDao = db.getDiaryEntryDao();
     namedEntityDao = db.getDiaryNamedEntityDao();
     sentimentDao = db.getDiarySentimentDao();
-    this.hasEntitiesModule = hasEntitiesModule;
-    this.hasSentimentModule = hasSentimentModule;
     api = new CloudNaturalLanguage.Builder(
         new NetHttpTransport(), JacksonFactory.getDefaultInstance(), credential).build();
   }
@@ -93,7 +87,7 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
     final Collection<DiaryNamedEntity> entities = new ArrayList<>();
     final Collection<DiarySentiment> sentiments = new ArrayList<>();
     for (final DiaryEntry entry : entries) {
-      if (!entry.isEntitiesAnalyzed() && hasEntitiesModule) {
+      if (!entry.isEntitiesAnalyzed()) {
         try {
           // Perform the query.
           entities.addAll(requestNamedEntities(entry));
@@ -103,7 +97,7 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
           Log.e(TAG, "failed to analyze entities", e);
         }
       }
-      if (!entry.isSentimentAnalyzed() && hasSentimentModule) {
+      if (!entry.isSentimentAnalyzed()) {
         try {
           // Perform the query
           sentiments.addAll(requestSentiment(entry));

@@ -14,9 +14,9 @@ import com.wisebison.leide.data.DiaryEntryDao;
 import com.wisebison.leide.model.DiaryEntry;
 import com.wisebison.leide.view.MainActivity;
 
-import java.util.List;
+import org.apache.commons.collections4.CollectionUtils;
 
-import lombok.Setter;
+import java.util.List;
 
 public class AnalyzeUtil {
 
@@ -29,12 +29,6 @@ public class AnalyzeUtil {
   private boolean running;
   private boolean analysisInProgress;
   private boolean analysisQueued;
-
-  @Setter
-  private boolean hasEntitiesModule;
-
-  @Setter
-  private boolean hasSentimentModule;
 
   private static AnalyzeUtil INSTANCE;
 
@@ -76,12 +70,16 @@ public class AnalyzeUtil {
   }
 
   private void analyze(final List<DiaryEntry> entries) {
+    if (!mainActivity.billingUtil.hasPremium()) {
+      Log.d(TAG, "user is not subscribed to premium");
+      return;
+    }
     if (analysisInProgress) {
       Log.e(TAG, "attempting concurrent analysis");
       analysisQueued = true;
       return;
     }
-    if (hasEntriesToAnalyze(entries)) {
+    if (CollectionUtils.isNotEmpty(entries)) {
       // Snackbar shows progress at the bottom of screen while analysis is in progress
       final ConstraintLayout constraintLayout = mainActivity.findViewById(R.id.constraint_layout);
       final Snackbar snackbar  = Snackbar.make(constraintLayout,
@@ -117,21 +115,9 @@ public class AnalyzeUtil {
         final GoogleCredential credential = new GoogleCredential()
           .setAccessToken(token)
           .createScoped(CloudNaturalLanguageScopes.all());
-        new AnalyzeTask(taskCallbacks, db, credential, hasEntitiesModule, hasSentimentModule)
+        new AnalyzeTask(taskCallbacks, db, credential, mainActivity.billingUtil)
           .execute(entries.toArray(new DiaryEntry[0]));
       });
     }
-  }
-
-  private boolean hasEntriesToAnalyze(final List<DiaryEntry> entries) {
-    for (final DiaryEntry entry : entries) {
-      if (hasEntitiesModule && !entry.isEntitiesAnalyzed()) {
-        return true;
-      }
-      if (hasSentimentModule && !entry.isSentimentAnalyzed()) {
-        return true;
-      }
-    }
-    return false;
   }
 }

@@ -30,4 +30,5 @@
     <string name="average_sentiment_7_days_delta">(%s from previous 7 days)</string>
     <string name="average_sentiment_30_days_delta">(%s from previous 30 days)</string>
     <string name="most_positive_sentence_label">Most positive sentence:</string>
+    <string name="subscribe">Subscribe</string>
 </resources>
