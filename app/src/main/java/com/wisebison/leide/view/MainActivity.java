@@ -1,5 +1,6 @@
 package com.wisebison.leide.view;
 
+import android.app.ActivityOptions;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
@@ -167,6 +168,12 @@ public class MainActivity extends AppCompatActivity {
       new AlertDialog.Builder(this)
         .setView(dialogLayout)
         .show();
+    }
+
+    if (id == R.id.action_menu) {
+      final Intent intent = new Intent(this, MenuActivity.class);
+      startActivity(intent, ActivityOptions.makeCustomAnimation(this, android.R.anim.fade_in,
+        android.R.anim.fade_out).toBundle());
     }
 
     return super.onOptionsItemSelected(item);
