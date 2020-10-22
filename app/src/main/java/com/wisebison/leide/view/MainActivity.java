@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
 
 import androidx.annotation.Nullable;
@@ -42,11 +44,14 @@ public class MainActivity extends AppCompatActivity {
 
   private BackupUtil backupUtil;
 
-  private BillingUtil billingUtil;
+  public BillingUtil billingUtil;
+
+  private AnalyzeUtil analyzeUtil;
 
   private ModuleDao moduleDao;
 
   private Map<ModuleType, ModuleFragment> addedModules;
+  private List<Module> allModules;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -64,57 +69,32 @@ public class MainActivity extends AppCompatActivity {
       backupUtil.start();
     }
 
-    addModules(new DiaryModuleFragment());
+    addModule(new DiaryModuleFragment());
 
     addedModules = new HashMap<>();
-
-    final AnalyzeUtil analyzeUtil = AnalyzeUtil.getInstance(this);
+    allModules = new ArrayList<>();
 
     moduleDao = AppDatabase.getInstance(this).getModuleDao();
     moduleDao.getAll().observe(this, modules -> {
-      final List<ModuleType> currentModules = new ArrayList<>();
-      for (final Module module : modules) {
-        final ModuleFragment fragment = module.getFragment();
-        currentModules.add(module.getModuleType());
-        if (fragment != null && !addedModules.containsKey(module.getModuleType())) {
-          addModules(fragment);
-          addedModules.put(module.getModuleType(), fragment);
-          if (ModuleType.NAMED_ENTITIES.equals(module.getModuleType())) {
-            analyzeUtil.setHasEntitiesModule(true);
-            analyzeUtil.start();
-          }
-          if (ModuleType.SENTIMENT.equals(module.getModuleType())) {
-            analyzeUtil.setHasSentimentModule(true);
-            analyzeUtil.start();
-          }
-        }
-      }
-      final Iterator<ModuleType> iterator = addedModules.keySet().iterator();
-      while (iterator.hasNext()) {
-        final ModuleType addedModule = iterator.next();
-        if (!currentModules.contains(addedModule)) {
-          getSupportFragmentManager().beginTransaction()
-            .remove(Objects.requireNonNull(addedModules.get(addedModule))).commit();
-          iterator.remove();
-          if (ModuleType.NAMED_ENTITIES.equals(addedModule)) {
-            analyzeUtil.setHasEntitiesModule(false);
-          }
-          if (ModuleType.SENTIMENT.equals(addedModule)) {
-            analyzeUtil.setHasSentimentModule(false);
-          }
-        }
-      }
+      allModules.clear();
+      allModules.addAll(modules);
+      addModulesToView();
     });
 
     billingUtil = new BillingUtil(this);
+
+    analyzeUtil = AnalyzeUtil.getInstance(this);
+    billingUtil.setOnSkusLoadedListener(() -> {
+      if (billingUtil.hasPremium()) {
+        analyzeUtil.start();
+      }
+    });
   }
 
-  private void addModules(final Fragment... fragments) {
+  private void addModule(final Fragment fragment) {
     final FragmentManager fragmentManager = getSupportFragmentManager();
     final FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-    for (final Fragment fragment : fragments) {
-      fragmentTransaction.add(R.id.module_container, fragment);
-    }
+    fragmentTransaction.add(R.id.module_container, fragment);
     fragmentTransaction.commit();
   }
 
@@ -151,19 +131,33 @@ public class MainActivity extends AppCompatActivity {
     if (id == R.id.action_add_module) {
       final LinearLayout dialogLayout = new LinearLayout(this);
       dialogLayout.setOrientation(LinearLayout.VERTICAL);
+      final List<Button> addButtons = new ArrayList<>();
+      final boolean userHasPremium = billingUtil.hasPremium();
       for (final ModuleType moduleType : ModuleType.values()) {
         final ModuleOptionView moduleOptionView = new ModuleOptionView(this);
         moduleOptionView.getTextView().setText(moduleType.getTitleId());
-        if (moduleType.getSku() == null || billingUtil.isPurchased(moduleType.getSku())) {
-          moduleOptionView.getAddButton().setText(getString(R.string.add));
+        moduleOptionView.getAddButton().setText(getString(R.string.add));
+        if (!moduleType.isPremium() || userHasPremium) {
           moduleOptionView.getAddButton().setOnClickListener(v -> onAddModule(moduleType));
         } else {
-          moduleOptionView.getAddButton().setText(billingUtil.getPrice(moduleType.getSku()));
-          moduleOptionView.getAddButton().setOnClickListener(view -> {
-            billingUtil.purchase(moduleType.getSku(), () -> onAddModule(moduleType));
-          });
+          moduleOptionView.getAddButton().setEnabled(false);
+          addButtons.add(moduleOptionView.getAddButton());
         }
         dialogLayout.addView(moduleOptionView);
+      }
+      if (!userHasPremium) {
+        final Button subscribeButton = new Button(this);
+        subscribeButton.setText(R.string.subscribe);
+        subscribeButton.setOnClickListener(view ->
+          billingUtil.purchase("pro_3_month", () -> {
+            subscribeButton.setVisibility(View.GONE);
+            for (final Button addButton : addButtons) {
+              addButton.setEnabled(true);
+            }
+            addModulesToView();
+            analyzeUtil.start();
+          }));
+        dialogLayout.addView(subscribeButton);
       }
       new AlertDialog.Builder(this)
         .setView(dialogLayout)
@@ -177,6 +171,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     return super.onOptionsItemSelected(item);
+  }
+
+  private void addModulesToView() {
+    final List<ModuleType> currentModules = new ArrayList<>();
+    for (final Module module : allModules) {
+      final ModuleFragment fragment = module.getFragment();
+      currentModules.add(module.getModuleType());
+      if (fragment != null && !addedModules.containsKey(module.getModuleType())) {
+        if (!module.getModuleType().isPremium() || billingUtil.hasPremium()) {
+          addModule(fragment);
+          addedModules.put(module.getModuleType(), fragment);
+        }
+      }
+    }
+    final Iterator<ModuleType> iterator = addedModules.keySet().iterator();
+    while (iterator.hasNext()) {
+      final ModuleType addedModule = iterator.next();
+      if (!currentModules.contains(addedModule)) {
+        getSupportFragmentManager().beginTransaction()
+          .remove(Objects.requireNonNull(addedModules.get(addedModule))).commit();
+        iterator.remove();
+      }
+    }
   }
 
   private void onAddModule(final ModuleType moduleType) {
