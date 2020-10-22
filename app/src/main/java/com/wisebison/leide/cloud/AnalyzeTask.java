@@ -45,7 +45,7 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
 
   /**
    * Call resolve() to inform the caller that analysis of the specified entries is complete
-   * and the resulting NamedEntities have been saved in the database.
+   * and the resulting DiaryNamedEntities/DiarySentiments have been saved in the database.
    * Call updateProgress(int) to inform the caller of how many entities have been analyzed.
    */
   private final Callbacks callbacks;
@@ -82,7 +82,7 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
 
   @Override
   protected Void doInBackground(final DiaryEntry... entries) {
-    // AnalyzeUtil the specified entries, save the results, and mark the entries as analyzed.
+    // Analyze the specified entries, save the results, and mark the entries as analyzed.
     int analyzedCount = 0;
     final Collection<DiaryNamedEntity> entities = new ArrayList<>();
     final Collection<DiarySentiment> sentiments = new ArrayList<>();
@@ -180,7 +180,7 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
   }
 
   /**
-   * Query the GCNLAPI for sentiment and create a Sentiment object from the results.
+   * Query the GCNLAPI for sentiment and create DiarySentiment objects from the results.
    *
    * @param entry to analyze the text of
    * @return the sentiment of the text for the entry
