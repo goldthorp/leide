@@ -63,6 +63,10 @@ public class CarouselClock {
     return index != null ? index : 0;
   }
 
+  public void removeIndex(final String indexId) {
+    indexes.put(indexId, null);
+  }
+
   public void removeAction(final Action action) {
     actions.remove(action);
     if (CollectionUtils.isEmpty(actions)) {

@@ -80,6 +80,9 @@ public class CarouselView extends LinearLayout {
   public void stop() {
     if (running) {
       carouselClock.removeAction(action);
+      if (indexId != null) {
+        carouselClock.removeIndex(indexId);
+      }
       running = false;
     }
   }

@@ -264,7 +264,7 @@ public class NamedEntitiesModuleFragment extends TimeFrameModuleFragment {
 
       fragment.carouselView.setVisibility(View.VISIBLE);
       fragment.entitiesProgressBar.setVisibility(View.GONE);
-      fragment.carouselView.start(5000, "TIME_FRAME");
+      fragment.carouselView.start(5000, CAROUSEL_INDEX_ID);
     }
   }
 }
