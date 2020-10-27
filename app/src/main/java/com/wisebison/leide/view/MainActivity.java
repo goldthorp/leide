@@ -69,7 +69,9 @@ public class MainActivity extends AppCompatActivity {
       backupUtil.start();
     }
 
-    addModule(new DiaryModuleFragment());
+    if (getSupportFragmentManager().findFragmentByTag("DiaryModuleFragment") == null) {
+      addModule(new DiaryModuleFragment());
+    }
 
     addedModules = new HashMap<>();
     allModules = new ArrayList<>();
@@ -94,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
   private void addModule(final Fragment fragment) {
     final FragmentManager fragmentManager = getSupportFragmentManager();
     final FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-    fragmentTransaction.add(R.id.module_container, fragment);
+    fragmentTransaction.add(R.id.module_container, fragment, fragment.getClass().getSimpleName());
     fragmentTransaction.commit();
   }
 
