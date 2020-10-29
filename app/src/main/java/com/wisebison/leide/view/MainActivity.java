@@ -77,19 +77,19 @@ public class MainActivity extends AppCompatActivity {
     allModules = new ArrayList<>();
 
     moduleDao = AppDatabase.getInstance(this).getModuleDao();
-    moduleDao.getAll().observe(this, modules -> {
-      allModules.clear();
-      allModules.addAll(modules);
-      addModulesToView();
-    });
 
     billingUtil = new BillingUtil(this);
 
     analyzeUtil = AnalyzeUtil.getInstance(this);
-    billingUtil.setOnSkusLoadedListener(() -> {
+    billingUtil.setOnBillingUtilReadyListener(() -> {
       if (billingUtil.hasPremium()) {
         analyzeUtil.start();
       }
+      moduleDao.getAll().observe(this, modules -> {
+        allModules.clear();
+        allModules.addAll(modules);
+        addModulesToView();
+      });
     });
   }
 
