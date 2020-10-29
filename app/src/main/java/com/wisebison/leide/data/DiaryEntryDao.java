@@ -62,6 +62,13 @@ public abstract class DiaryEntryDao {
     return BackgroundUtil.doInBackground(this::_getEarliestTimestamp);
   }
 
+  @Query("SELECT * FROM `diary-entry`")
+  abstract List<DiaryEntry> _getAll();
+
+  public BackgroundUtil.Background<List<DiaryEntry>> getAll() {
+    return BackgroundUtil.doInBackground(this::_getAll);
+  }
+
   @Insert
   public abstract void insert(DiaryEntry entry);
 
