@@ -4,6 +4,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.language.v1.CloudNaturalLanguage;
@@ -94,6 +95,9 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
           // Mark this entry as analyzed.
           entry.setEntitiesAnalyzed(true);
         } catch (final IOException e) {
+          if (e instanceof GoogleJsonResponseException) {
+            entry.setEntitiesAnalyzed(true);
+          }
           Log.e(TAG, "failed to analyze entities", e);
         }
       }
@@ -104,6 +108,9 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
           // Mark this entry as analyzed
           entry.setSentimentAnalyzed(true);
         } catch (final IOException e) {
+          if (e instanceof GoogleJsonResponseException) {
+            entry.setSentimentAnalyzed(true);
+          }
           Log.e(TAG, "failed to analyze sentiment", e);
         }
       }
