@@ -94,10 +94,14 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void addModule(final Fragment fragment) {
-    final FragmentManager fragmentManager = getSupportFragmentManager();
-    final FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-    fragmentTransaction.add(R.id.module_container, fragment, fragment.getClass().getSimpleName());
-    fragmentTransaction.commit();
+    Fragment existingFragment =
+      getSupportFragmentManager().findFragmentByTag(fragment.getClass().getSimpleName());
+    if (existingFragment == null) {
+      final FragmentManager fragmentManager = getSupportFragmentManager();
+      final FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+      fragmentTransaction.add(R.id.module_container, fragment, fragment.getClass().getSimpleName());
+      fragmentTransaction.commit();
+    }
   }
 
   // Start the backup once user is logged in
