@@ -65,8 +65,7 @@ public class MainActivity extends AppCompatActivity {
       final Intent intent = new Intent(this, LoginActivity.class);
       startActivityForResult(intent, LOGIN_REQUEST_CODE);
     } else {
-      backupUtil = new BackupUtil(this);
-      backupUtil.start();
+      onLoggedIn();
     }
 
     if (getSupportFragmentManager().findFragmentByTag("DiaryModuleFragment") == null) {
@@ -78,18 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
     moduleDao = AppDatabase.getInstance(this).getModuleDao();
 
-    billingUtil = new BillingUtil(this);
-
     analyzeUtil = AnalyzeUtil.getInstance(this);
-    billingUtil.setOnBillingUtilReadyListener(() -> {
-      if (billingUtil.hasPremium()) {
-        analyzeUtil.start();
-      }
-      moduleDao.getAll().observe(this, modules -> {
-        allModules.clear();
-        allModules.addAll(modules);
-        addModulesToView();
-      });
     });
   }
 
@@ -110,9 +98,24 @@ public class MainActivity extends AppCompatActivity {
     final int requestCode, final int resultCode, @Nullable final Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
     if (requestCode == LOGIN_REQUEST_CODE && resultCode == RESULT_OK) {
-      backupUtil = new BackupUtil(this);
-      backupUtil.start();
+      onLoggedIn();
     }
+  }
+
+  private void onLoggedIn() {
+    backupUtil = new BackupUtil(this);
+    backupUtil.start();
+    billingUtil = new BillingUtil(this);
+    billingUtil.setOnBillingUtilReadyListener(() -> {
+      if (billingUtil.hasPremium()) {
+        analyzeUtil.start();
+      }
+      moduleDao.getAll().observe(this, modules -> {
+        allModules.clear();
+        allModules.addAll(modules);
+        addModulesToView();
+      });
+    });
   }
 
   @Override
