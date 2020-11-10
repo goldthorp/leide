@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -46,6 +47,11 @@ public class MenuActivity extends AppCompatActivity {
         "export_" + sdf.format(new Date(System.currentTimeMillis())) + ".txt");
 
       startActivityForResult(intent, CREATE_FILE_REQUEST_CODE);
+    });
+
+    final ImageView exit = findViewById(R.id.exit);
+    exit.setOnClickListener(v -> {
+      finish();
     });
   }
 
