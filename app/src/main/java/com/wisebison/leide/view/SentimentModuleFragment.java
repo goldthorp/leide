@@ -43,7 +43,9 @@ public class SentimentModuleFragment extends TimeFrameModuleFragment {
 
   @Nullable
   @Override
-  public View onCreateView(@NonNull final LayoutInflater inflater, @Nullable final ViewGroup container, @Nullable final Bundle savedInstanceState) {
+  public View onCreateView(
+    @NonNull final LayoutInflater inflater, @Nullable final ViewGroup container,
+    @Nullable final Bundle savedInstanceState) {
     final View root = super.onCreateView(inflater, container, savedInstanceState);
     Objects.requireNonNull(root);
     carouselView = root.findViewById(R.id.sentiment_carousel_view);

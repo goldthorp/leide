@@ -27,8 +27,11 @@ public class Module implements Serializable {
   @TypeConverters(ModuleType.class)
   private ModuleType moduleType;
 
+  private int color;
+
   public Module(final ModuleType moduleType) {
     this.moduleType = moduleType;
+    this.color = moduleType.getDefaultColor();
   }
 
   public ModuleFragment getFragment() {

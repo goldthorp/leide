@@ -2,11 +2,17 @@ package com.wisebison.leide.view;
 
 import android.app.ActivityOptions;
 import android.content.Intent;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
 import android.os.Bundle;
+import android.util.Log;
+import android.util.Pair;
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import androidx.annotation.Nullable;
@@ -16,8 +22,10 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.jaredrummler.android.colorpicker.ColorPickerDialogListener;
 import com.wisebison.leide.R;
 import com.wisebison.leide.billing.BillingUtil;
 import com.wisebison.leide.cloud.AnalyzeUtil;
@@ -36,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ColorPickerDialogListener {
 
   private static final String TAG = "MainActivity";
 
@@ -50,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
 
   private ModuleDao moduleDao;
 
-  private Map<ModuleType, ModuleFragment> addedModules;
+  private Map<ModuleType, Pair<Module, ModuleFragment>> addedModules;
   private List<Module> allModules;
 
   @Override
@@ -68,16 +76,69 @@ public class MainActivity extends AppCompatActivity {
       onLoggedIn();
     }
 
-    if (getSupportFragmentManager().findFragmentByTag("DiaryModuleFragment") == null) {
-      addModule(new DiaryModuleFragment());
-    }
-
     addedModules = new HashMap<>();
     allModules = new ArrayList<>();
 
     moduleDao = AppDatabase.getInstance(this).getModuleDao();
 
     analyzeUtil = AnalyzeUtil.getInstance(this);
+
+    ImageView add = findViewById(R.id.add);
+    add.setOnClickListener(v -> {
+      final LinearLayout dialogLayout = new LinearLayout(this);
+      dialogLayout.setOrientation(LinearLayout.VERTICAL);
+      final List<Button> addButtons = new ArrayList<>();
+      final boolean userHasPremium = billingUtil.hasPremium();
+      for (final ModuleType moduleType : ModuleType.values()) {
+        final ModuleOptionView moduleOptionView = new ModuleOptionView(this);
+        moduleOptionView.getTextView().setText(moduleType.getTitleId());
+        moduleOptionView.getAddButton().setText(getString(R.string.add));
+        if (!moduleType.isPremium() || userHasPremium) {
+          moduleOptionView.getAddButton().setOnClickListener(b -> onAddModule(moduleType));
+        } else {
+          moduleOptionView.getAddButton().setEnabled(false);
+          addButtons.add(moduleOptionView.getAddButton());
+        }
+        dialogLayout.addView(moduleOptionView);
+      }
+      if (!userHasPremium) {
+        final Button subscribeButton = new Button(this);
+        subscribeButton.setText(R.string.subscribe);
+        subscribeButton.setOnClickListener(view ->
+          billingUtil.purchase("pro_3_month", () -> {
+            subscribeButton.setVisibility(View.GONE);
+            for (final Button addButton : addButtons) {
+              addButton.setEnabled(true);
+            }
+            addModulesToView();
+            analyzeUtil.start();
+          }));
+        dialogLayout.addView(subscribeButton);
+      }
+      new AlertDialog.Builder(this)
+        .setView(dialogLayout)
+        .show();
+    });
+    // TODO remove
+    add.setOnLongClickListener(v -> {
+      if (backupUtil != null) {
+        backupUtil.restore();
+        return true;
+      }
+      return false;
+    });
+
+    ImageView menu = findViewById(R.id.menu);
+    menu.setOnClickListener(v -> {
+      final Intent intent = new Intent(this, MenuActivity.class);
+      startActivity(intent, ActivityOptions.makeCustomAnimation(this, android.R.anim.fade_in,
+        android.R.anim.fade_out).toBundle());
+    });
+
+    FloatingActionButton newEntryFab = findViewById(R.id.new_entry_fab);
+    newEntryFab.setOnClickListener(v -> {
+      final Intent intent = new Intent(this, CreateDiaryEntryActivity.class);
+      startActivity(intent);
     });
   }
 
@@ -125,72 +186,20 @@ public class MainActivity extends AppCompatActivity {
     return true;
   }
 
-  @Override
-  public boolean onOptionsItemSelected(final MenuItem item) {
-    // Handle action bar item clicks here. The action bar will
-    // automatically handle clicks on the Home/Up button, so long
-    // as you specify a parent activity in AndroidManifest.xml.
-    final int id = item.getItemId();
-
-    if (id == R.id.action_restore_backup && backupUtil != null) {
-      backupUtil.restore();
-      return true;
-    }
-
-    if (id == R.id.action_add_module) {
-      final LinearLayout dialogLayout = new LinearLayout(this);
-      dialogLayout.setOrientation(LinearLayout.VERTICAL);
-      final List<Button> addButtons = new ArrayList<>();
-      final boolean userHasPremium = billingUtil.hasPremium();
-      for (final ModuleType moduleType : ModuleType.values()) {
-        final ModuleOptionView moduleOptionView = new ModuleOptionView(this);
-        moduleOptionView.getTextView().setText(moduleType.getTitleId());
-        moduleOptionView.getAddButton().setText(getString(R.string.add));
-        if (!moduleType.isPremium() || userHasPremium) {
-          moduleOptionView.getAddButton().setOnClickListener(v -> onAddModule(moduleType));
-        } else {
-          moduleOptionView.getAddButton().setEnabled(false);
-          addButtons.add(moduleOptionView.getAddButton());
-        }
-        dialogLayout.addView(moduleOptionView);
-      }
-      if (!userHasPremium) {
-        final Button subscribeButton = new Button(this);
-        subscribeButton.setText(R.string.subscribe);
-        subscribeButton.setOnClickListener(view ->
-          billingUtil.purchase("pro_3_month", () -> {
-            subscribeButton.setVisibility(View.GONE);
-            for (final Button addButton : addButtons) {
-              addButton.setEnabled(true);
-            }
-            addModulesToView();
-            analyzeUtil.start();
-          }));
-        dialogLayout.addView(subscribeButton);
-      }
-      new AlertDialog.Builder(this)
-        .setView(dialogLayout)
-        .show();
-    }
-
-    if (id == R.id.action_menu) {
-      final Intent intent = new Intent(this, MenuActivity.class);
-      startActivity(intent, ActivityOptions.makeCustomAnimation(this, android.R.anim.fade_in,
-        android.R.anim.fade_out).toBundle());
-    }
-
-    return super.onOptionsItemSelected(item);
-  }
-
   private void addModulesToView() {
     final List<ModuleType> currentModules = new ArrayList<>();
     for (final Module module : allModules) {
       final ModuleFragment fragment = module.getFragment();
       currentModules.add(module.getModuleType());
-      if (fragment != null && !addedModules.containsKey(module.getModuleType())) {
-        if (!module.getModuleType().isPremium() || billingUtil.hasPremium()) {
-          addModule(fragment);
-          addedModules.put(module.getModuleType(), fragment);
+      if (fragment != null) {
+        if (!addedModules.containsKey(module.getModuleType())) {
+          if (!module.getModuleType().isPremium() || billingUtil.hasPremium()) {
+            addModule(fragment);
+            addedModules.put(module.getModuleType(), Pair.create(module, fragment));
+          }
+        } else if (
+          addedModules.get(module.getModuleType()).second.getColor() != module.getColor()) {
+          addedModules.get(module.getModuleType()).second.setColor(module.getColor());
         }
       }
     }
@@ -199,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
       final ModuleType addedModule = iterator.next();
       if (!currentModules.contains(addedModule)) {
         getSupportFragmentManager().beginTransaction()
-          .remove(Objects.requireNonNull(addedModules.get(addedModule))).commit();
+          .remove(Objects.requireNonNull(addedModules.get(addedModule).second)).commit();
         iterator.remove();
       }
     }
@@ -211,4 +220,14 @@ public class MainActivity extends AppCompatActivity {
       BackgroundUtil.doInBackgroundNow(() -> moduleDao.insert(module));
     }
   }
+
+  @Override
+  public void onColorSelected(int dialogId, int color) {
+    Module module = addedModules.get(ModuleType.values()[dialogId]).first;
+    module.setColor(color);
+    BackgroundUtil.doInBackgroundNow(() -> moduleDao.update(module));
+  }
+
+  @Override
+  public void onDialogDismissed(int dialogId) { }
 }
