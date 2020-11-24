@@ -7,14 +7,17 @@ import androidx.room.Query;
 import androidx.room.Update;
 
 import com.wisebison.leide.model.DiaryEntry;
+import com.wisebison.leide.model.DiaryEntryForm;
 import com.wisebison.leide.util.BackgroundUtil;
 
 import java.util.List;
 
 @Dao
 public abstract class DiaryEntryDao {
-  @Query("SELECT * FROM `diary-entry` ORDER BY start_timestamp DESC")
-  public abstract LiveData<List<DiaryEntry>> getList();
+  @Query("SELECT e.id, e.text, e.timeZone, e.start_timestamp, e.location, s.score " +
+    "FROM `diary-entry` e LEFT JOIN `diary-sentiment` s ON e.id = s.entry_fk " +
+    "ORDER BY e.start_timestamp DESC")
+  public abstract LiveData<List<DiaryEntryForm>> getList();
 
   @Query("SELECT COUNT(*) FROM `diary-entry`")
   public abstract LiveData<Long> getCount();

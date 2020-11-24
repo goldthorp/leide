@@ -10,7 +10,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.wisebison.leide.R;
 
-public class LoginActivity extends AppCompatActivity {
+import java.io.Serializable;
+
+public class LoginActivity extends AppCompatActivity implements Serializable {
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {

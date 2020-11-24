@@ -17,7 +17,6 @@ import com.google.api.services.language.v1.model.Entity;
 import com.google.api.services.language.v1.model.EntityMention;
 import com.google.api.services.language.v1.model.Sentence;
 import com.google.api.services.language.v1.model.Sentiment;
-import com.wisebison.leide.billing.BillingUtil;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.DiaryEntryDao;
 import com.wisebison.leide.data.DiaryNamedEntityDao;
@@ -72,7 +71,7 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
   private final CloudNaturalLanguage api;
 
   AnalyzeTask(final Callbacks callbacks, final AppDatabase db,
-              final GoogleCredential credential, final BillingUtil billingUtil) {
+              final GoogleCredential credential) {
     this.callbacks = callbacks;
     entryDao = db.getDiaryEntryDao();
     namedEntityDao = db.getDiaryNamedEntityDao();

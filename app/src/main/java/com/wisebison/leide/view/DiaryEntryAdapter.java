@@ -11,7 +11,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.wisebison.leide.R;
-import com.wisebison.leide.model.DiaryEntry;
+import com.wisebison.leide.model.DiaryEntryForm;
+import com.wisebison.leide.util.Utils;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -23,14 +24,18 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
 
-public class DiaryEntryAdapter extends ArrayAdapter<DiaryEntry> {
+public class DiaryEntryAdapter extends ArrayAdapter<DiaryEntryForm> {
 
   // Keep items as a field here for convenient update method
-  private final ArrayList<DiaryEntry> items;
+  private final ArrayList<DiaryEntryForm> items;
 
-  DiaryEntryAdapter(@NonNull final Context context, final ArrayList<DiaryEntry> items) {
+  private final boolean showSentiment;
+
+  DiaryEntryAdapter(@NonNull final Context context, final ArrayList<DiaryEntryForm> items,
+                    final boolean showSentiment) {
     super(context, R.layout.row_diary_entry, items);
     this.items = items;
+    this.showSentiment = showSentiment;
   }
 
   // Use view holder pattern for smoother scrolling
@@ -44,7 +49,7 @@ public class DiaryEntryAdapter extends ArrayAdapter<DiaryEntry> {
   @Override
   public View getView(final int position, @Nullable final View convertView,
                       @NonNull final ViewGroup parent) {
-    final DiaryEntry entry = Objects.requireNonNull(getItem(position));
+    final DiaryEntryForm entry = Objects.requireNonNull(getItem(position));
 
     final View customView;
     final ViewHolder viewHolder;
@@ -56,8 +61,9 @@ public class DiaryEntryAdapter extends ArrayAdapter<DiaryEntry> {
       viewHolder.date = customView.findViewById(R.id.dateTextView);
       viewHolder.text = customView.findViewById(R.id.textTextView);
       viewHolder.location = customView.findViewById(R.id.locationTextView);
-      // TODO
-//      viewHolder.sentiment = customView.findViewById(R.id.sentiment_text_view);
+      if (showSentiment) {
+         viewHolder.sentiment = customView.findViewById(R.id.sentiment_text_view);
+      }
       customView.setTag(viewHolder);
     } else {
       // Reuse existing view from ViewHolder
@@ -69,7 +75,7 @@ public class DiaryEntryAdapter extends ArrayAdapter<DiaryEntry> {
     if (StringUtils.isNotBlank(entry.getTimeZone())) {
       sdf.setTimeZone(TimeZone.getTimeZone(entry.getTimeZone()));
     }
-    viewHolder.date.setText(sdf.format(new Date(entry.getStartTimestamp())));
+    viewHolder.date.setText(sdf.format(new Date(entry.getTimestamp())));
 
     viewHolder.text.setText(entry.getText());
 
@@ -80,18 +86,21 @@ public class DiaryEntryAdapter extends ArrayAdapter<DiaryEntry> {
       viewHolder.location.setVisibility(View.GONE);
     }
 
-    // TODO
-//    if (entry.getSentiment() != null) {
-//      viewHolder.sentiment.setText("Sentiment: " + entry.getSentiment());
-//      viewHolder.sentiment.setVisibility(View.VISIBLE);
-//    } else {
-//      viewHolder.sentiment.setVisibility(View.GONE);
-//    }
+    if (showSentiment) {
+      if (entry.getSentiment() != null) {
+        viewHolder.sentiment.setText(
+          getContext().getResources().getString(R.string.sentiment_label,
+            Utils.formatFloat(entry.getSentiment(), false)));
+        viewHolder.sentiment.setVisibility(View.VISIBLE);
+      } else {
+        viewHolder.sentiment.setVisibility(View.GONE);
+      }
+    }
 
     return customView;
   }
 
-  void update(final List<DiaryEntry> entries) {
+  void update(final List<DiaryEntryForm> entries) {
     items.clear();
     items.addAll(entries);
     notifyDataSetChanged();

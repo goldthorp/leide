@@ -32,14 +32,14 @@
         android:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
         tools:ignore="HardcodedText" />
 
-<!--    TODO-->
-<!--    <TextView-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:id="@+id/sentiment_text_view"-->
-<!--        android:paddingTop="5dp"-->
-<!--        android:textStyle="bold"-->
-<!--        android:text="Sentiment: .6"-->
-<!--        tools:ignore="HardcodedText" />-->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/sentiment_text_view"
+        android:visibility="gone"
+        android:paddingTop="5dp"
+        android:textStyle="bold"
+        android:text="Sentiment: .6"
+        tools:ignore="HardcodedText" />
 
 </LinearLayout>

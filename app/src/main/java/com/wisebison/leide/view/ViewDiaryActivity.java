@@ -6,8 +6,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.wisebison.leide.R;
 
-import java.util.Objects;
+import dagger.hilt.android.AndroidEntryPoint;
 
+@AndroidEntryPoint
 public class ViewDiaryActivity extends AppCompatActivity {
 
   @Override

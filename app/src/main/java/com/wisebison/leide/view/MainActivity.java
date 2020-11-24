@@ -2,14 +2,9 @@ package com.wisebison.leide.view;
 
 import android.app.ActivityOptions;
 import android.content.Intent;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.LayerDrawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.Pair;
-import android.util.TypedValue;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -28,7 +23,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.jaredrummler.android.colorpicker.ColorPickerDialogListener;
 import com.wisebison.leide.R;
 import com.wisebison.leide.billing.BillingUtil;
-import com.wisebison.leide.cloud.AnalyzeUtil;
+import com.wisebison.leide.cloud.AnalyzeFragment;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.BackupUtil;
 import com.wisebison.leide.data.ModuleDao;
@@ -44,6 +39,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
+
+@AndroidEntryPoint
 public class MainActivity extends AppCompatActivity implements ColorPickerDialogListener {
 
   private static final String TAG = "MainActivity";
@@ -52,19 +52,29 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
 
   private BackupUtil backupUtil;
 
-  public BillingUtil billingUtil;
-
-  private AnalyzeUtil analyzeUtil;
+  @Inject
+  BillingUtil billingUtil;
 
   private ModuleDao moduleDao;
 
   private Map<ModuleType, Pair<Module, ModuleFragment>> addedModules;
   private List<Module> allModules;
+  private boolean hasPremium;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
+
+    addedModules = new HashMap<>();
+    allModules = new ArrayList<>();
+
+    moduleDao = AppDatabase.getInstance(this).getModuleDao();
+
+    if (getAnalyzeFragment() == null) {
+      getSupportFragmentManager().beginTransaction()
+        .add(new AnalyzeFragment(), AnalyzeFragment.TAG).commitNow();
+    }
 
     // Check if user is already signed in to firebase. If so, start backup immediately. If not,
     // start login activity and start backup once authentication is complete
@@ -76,24 +86,16 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
       onLoggedIn();
     }
 
-    addedModules = new HashMap<>();
-    allModules = new ArrayList<>();
-
-    moduleDao = AppDatabase.getInstance(this).getModuleDao();
-
-    analyzeUtil = AnalyzeUtil.getInstance(this);
-
-    ImageView add = findViewById(R.id.add);
+    final ImageView add = findViewById(R.id.add);
     add.setOnClickListener(v -> {
       final LinearLayout dialogLayout = new LinearLayout(this);
       dialogLayout.setOrientation(LinearLayout.VERTICAL);
       final List<Button> addButtons = new ArrayList<>();
-      final boolean userHasPremium = billingUtil.hasPremium();
       for (final ModuleType moduleType : ModuleType.values()) {
         final ModuleOptionView moduleOptionView = new ModuleOptionView(this);
         moduleOptionView.getTextView().setText(moduleType.getTitleId());
         moduleOptionView.getAddButton().setText(getString(R.string.add));
-        if (!moduleType.isPremium() || userHasPremium) {
+        if (!moduleType.isPremium() || hasPremium) {
           moduleOptionView.getAddButton().setOnClickListener(b -> onAddModule(moduleType));
         } else {
           moduleOptionView.getAddButton().setEnabled(false);
@@ -101,17 +103,17 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
         }
         dialogLayout.addView(moduleOptionView);
       }
-      if (!userHasPremium) {
+      if (!hasPremium) {
         final Button subscribeButton = new Button(this);
         subscribeButton.setText(R.string.subscribe);
         subscribeButton.setOnClickListener(view ->
-          billingUtil.purchase("pro_3_month", () -> {
+          billingUtil.purchase("pro_3_month", this, () -> {
             subscribeButton.setVisibility(View.GONE);
             for (final Button addButton : addButtons) {
               addButton.setEnabled(true);
             }
             addModulesToView();
-            analyzeUtil.start();
+            getAnalyzeFragment().start();
           }));
         dialogLayout.addView(subscribeButton);
       }
@@ -128,22 +130,26 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
       return false;
     });
 
-    ImageView menu = findViewById(R.id.menu);
+    final ImageView menu = findViewById(R.id.menu);
     menu.setOnClickListener(v -> {
       final Intent intent = new Intent(this, MenuActivity.class);
       startActivity(intent, ActivityOptions.makeCustomAnimation(this, android.R.anim.fade_in,
         android.R.anim.fade_out).toBundle());
     });
 
-    FloatingActionButton newEntryFab = findViewById(R.id.new_entry_fab);
+    final FloatingActionButton newEntryFab = findViewById(R.id.new_entry_fab);
     newEntryFab.setOnClickListener(v -> {
       final Intent intent = new Intent(this, CreateDiaryEntryActivity.class);
       startActivity(intent);
     });
   }
 
+  private AnalyzeFragment getAnalyzeFragment() {
+    return (AnalyzeFragment) getSupportFragmentManager().findFragmentByTag(AnalyzeFragment.TAG);
+  }
+
   private void addModule(final Fragment fragment) {
-    Fragment existingFragment =
+    final Fragment existingFragment =
       getSupportFragmentManager().findFragmentByTag(fragment.getClass().getSimpleName());
     if (existingFragment == null) {
       final FragmentManager fragmentManager = getSupportFragmentManager();
@@ -163,13 +169,16 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
     }
   }
 
+  /**
+   * Call this once the user is logged in.
+   */
   private void onLoggedIn() {
     backupUtil = new BackupUtil(this);
     backupUtil.start();
-    billingUtil = new BillingUtil(this);
-    billingUtil.setOnBillingUtilReadyListener(() -> {
-      if (billingUtil.hasPremium()) {
-        analyzeUtil.start();
+    billingUtil.hasPremium(hasPremium -> {
+      this.hasPremium = hasPremium;
+      if (hasPremium) {
+        getAnalyzeFragment().start();
       }
       moduleDao.getAll().observe(this, modules -> {
         allModules.clear();
@@ -193,7 +202,7 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
       currentModules.add(module.getModuleType());
       if (fragment != null) {
         if (!addedModules.containsKey(module.getModuleType())) {
-          if (!module.getModuleType().isPremium() || billingUtil.hasPremium()) {
+          if (!module.getModuleType().isPremium() || hasPremium) {
             addModule(fragment);
             addedModules.put(module.getModuleType(), Pair.create(module, fragment));
           }
@@ -222,12 +231,12 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
   }
 
   @Override
-  public void onColorSelected(int dialogId, int color) {
-    Module module = addedModules.get(ModuleType.values()[dialogId]).first;
+  public void onColorSelected(final int dialogId, final int color) {
+    final Module module = addedModules.get(ModuleType.values()[dialogId]).first;
     module.setColor(color);
     BackgroundUtil.doInBackgroundNow(() -> moduleDao.update(module));
   }
 
   @Override
-  public void onDialogDismissed(int dialogId) { }
+  public void onDialogDismissed(final int dialogId) { }
 }
