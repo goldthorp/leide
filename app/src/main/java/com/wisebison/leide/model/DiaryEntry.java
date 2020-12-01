@@ -32,6 +32,7 @@ public class DiaryEntry implements Comparable<DiaryEntry>, Serializable {
 
   private String location;
 
+  @ColumnInfo(name = "time_zone")
   private String timeZone;
 
   @Getter(onMethod=@__({@Exclude}))

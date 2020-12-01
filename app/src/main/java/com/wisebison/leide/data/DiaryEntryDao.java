@@ -14,7 +14,7 @@ import java.util.List;
 
 @Dao
 public abstract class DiaryEntryDao {
-  @Query("SELECT e.id, e.text, e.timeZone, e.start_timestamp, e.location, s.score " +
+  @Query("SELECT e.id, e.text, e.time_zone, e.start_timestamp, e.location, s.score " +
     "FROM `diary-entry` e LEFT JOIN `diary-sentiment` s ON e.id = s.entry_fk " +
     "WHERE s.sentence_begin_offset IS NULL ORDER BY e.start_timestamp DESC")
   public abstract LiveData<List<DiaryEntryForm>> getList();
