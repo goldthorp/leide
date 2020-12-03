@@ -29,23 +29,4 @@ public class Utils {
     final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
     return sdf.format(millis);
   }
-
-  //TODO
-//  public static List<Tag> getTags(final float score, final float magnitude) {
-//    final List<Tag> tags = new ArrayList<>();
-//    if (score >= .5) {
-//      if (magnitude > score) {
-//        tags.add(Tag.VERY_POSITIVE);
-//      } else {
-//        tags.add(Tag.POSITIVE);
-//      }
-//    }
-//    if (score >= -.1 && score <= .1 && magnitude > .1) {
-//      tags.add(Tag.WELL_BALANCED);
-//    }
-//    if (score < -.5) {
-//      tags.add(Tag.CUTS_DEEP);
-//    }
-//    return tags;
-//  }
 }
