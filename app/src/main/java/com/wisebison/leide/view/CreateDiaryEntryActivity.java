@@ -99,7 +99,7 @@ public class CreateDiaryEntryActivity extends AppCompatActivity {
     // Get the device's last known location and reverse geocode the coordinates on a background
     // thread. Populate the spinner with the addresses for auto-filling the location input.
     new GetLocationTask(addresses -> {
-      for (Address address : addresses) {
+      for (final Address address : addresses) {
         addressAdapter.add(address.getAddressLine(0));
       }
       locationSpinner.setAdapter(addressAdapter);
@@ -201,11 +201,12 @@ public class CreateDiaryEntryActivity extends AppCompatActivity {
 
     @Override
     protected Void doInBackground(final Context... contexts) {
+      // TODO request permission
       LocationServices.getFusedLocationProviderClient(contexts[0]).getLastLocation()
           .addOnSuccessListener(location -> {
             if (location != null) {
               // Device's last location found. Attempt to reverse geocode the coordinates.
-              Geocoder geocoder = new Geocoder(contexts[0], Locale.getDefault());
+              final Geocoder geocoder = new Geocoder(contexts[0], Locale.getDefault());
               try {
                 final List<Address> address = geocoder.getFromLocation(location.getLatitude(),
                     location.getLongitude(), 5);
@@ -215,7 +216,7 @@ public class CreateDiaryEntryActivity extends AppCompatActivity {
                 } else {
                   Log.d("DEBUG", "address not found");
                 }
-              } catch (IOException e) {
+              } catch (final IOException e) {
                 e.printStackTrace();
               }
             } else {
