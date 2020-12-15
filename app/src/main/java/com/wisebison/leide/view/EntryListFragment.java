@@ -16,8 +16,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.wisebison.leide.R;
 import com.wisebison.leide.billing.BillingUtil;
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.DiaryEntryDao;
-import com.wisebison.leide.model.DiaryEntryForm;
+import com.wisebison.leide.data.EntryDao;
+import com.wisebison.leide.model.EntryForm;
 
 import java.util.ArrayList;
 
@@ -41,12 +41,12 @@ public class EntryListFragment extends Fragment {
   public View onCreateView(
     @NonNull final LayoutInflater inflater, @Nullable final ViewGroup container,
     @Nullable final Bundle savedInstanceState) {
-    final View root = inflater.inflate(R.layout.fragment_diary_entry_list, container, false);
+    final View root = inflater.inflate(R.layout.fragment_entry_list, container, false);
     billingUtil.hasPremium(hasPremium -> {
       // Set up list ui
-      final ArrayList<DiaryEntryForm> entriesList = new ArrayList<>();
-      final DiaryEntryAdapter entryArrayAdapter =
-        new DiaryEntryAdapter(requireContext(), entriesList, hasPremium);
+      final ArrayList<EntryForm> entriesList = new ArrayList<>();
+      final EntryAdapter entryArrayAdapter =
+        new EntryAdapter(requireContext(), entriesList, hasPremium);
       final ListView listView = root.findViewById(R.id.entries_list_view);
       listView.setAdapter(entryArrayAdapter);
       // Set scroll position after list is drawn
@@ -60,20 +60,20 @@ public class EntryListFragment extends Fragment {
         topItemIndex = listView.getFirstVisiblePosition();
         final View firstItem = listView.getChildAt(0);
         topItemPadding = (firstItem == null) ? 0 : (firstItem.getTop() - listView.getPaddingTop());
-        final EntryListFragmentDirections.ActionEntryListFragmentToViewDiaryEntryFragment action =
+        final EntryListFragmentDirections.ActionEntryListFragmentToViewEntryFragment action =
           EntryListFragmentDirections
-            .actionEntryListFragmentToViewDiaryEntryFragment(entriesList.get(position).getId());
+            .actionEntryListFragmentToViewEntryFragment(entriesList.get(position).getId());
         Navigation.findNavController(root).navigate(action);
       });
 
 
       // Load all entries and subscribe to changes
-      final DiaryEntryDao entryDao = AppDatabase.getInstance(requireContext()).getDiaryEntryDao();
+      final EntryDao entryDao = AppDatabase.getInstance(requireContext()).getDiaryEntryDao();
       entryDao.getList().observe(getViewLifecycleOwner(), entryArrayAdapter::update);
 
       final FloatingActionButton fab = root.findViewById(R.id.fab);
       fab.setOnClickListener(view -> {
-        final Intent intent = new Intent(requireContext(), CreateDiaryEntryActivity.class);
+        final Intent intent = new Intent(requireContext(), CreateEntryActivity.class);
         startActivity(intent);
       });
     });

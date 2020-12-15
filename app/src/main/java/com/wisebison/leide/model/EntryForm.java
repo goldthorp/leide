@@ -11,7 +11,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class DiaryEntryForm implements Serializable {
+public class EntryForm implements Serializable {
 
   @ColumnInfo(name = "id")
   private Long id;

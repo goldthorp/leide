@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.DiaryEntryDao;
+import com.wisebison.leide.data.EntryDao;
 import com.wisebison.leide.model.Module;
 import com.wisebison.leide.util.RunInBackgroundTask;
 
@@ -28,7 +28,7 @@ abstract class TimeFrameModuleFragment extends ModuleFragment {
   final static int TIME_FRAME_ITEM_30_DAYS_ID = 1003;
 
   private Long earliestTimestamp;
-  private DiaryEntryDao entryDao;
+  private EntryDao entryDao;
 
   TimeFrameModuleFragment(final Module module) {
     super(module);

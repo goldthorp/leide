@@ -16,9 +16,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode(exclude = {"entitiesAnalyzed", "sentimentAnalyzed"})
-@Entity(tableName = "diary-entry")
-@BackupEntity(name = "diary-entry")
-public class DiaryEntry implements Comparable<DiaryEntry>, Serializable {
+@Entity(tableName = "entry")
+@BackupEntity(name = "entry")
+public class Entry implements Comparable<Entry>, Serializable {
   @PrimaryKey(autoGenerate = true)
   private Long id;
 
@@ -46,7 +46,7 @@ public class DiaryEntry implements Comparable<DiaryEntry>, Serializable {
 
   // Sort by newest to oldest
   @Override
-  public int compareTo(final DiaryEntry e) {
+  public int compareTo(final Entry e) {
     return e.getStartTimestamp().compareTo(startTimestamp);
   }
 }

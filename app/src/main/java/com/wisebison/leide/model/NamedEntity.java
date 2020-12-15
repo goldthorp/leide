@@ -15,16 +15,16 @@ import lombok.ToString;
 @Setter
 @ToString
 @EqualsAndHashCode(of = {"name", "entryId", "beginOffset"})
-@Entity(tableName = "diary-named-entity",
+@Entity(tableName = "named_entity",
   foreignKeys = @ForeignKey(
-    entity = DiaryEntry.class,
+    entity = Entry.class,
     parentColumns = "id",
     childColumns = "entry_fk",
     onDelete = ForeignKey.CASCADE),
   indices = @Index(
     name = "named_entity_entry_fk",
     value = "entry_fk"))
-public class DiaryNamedEntity {
+public class NamedEntity {
   @PrimaryKey(autoGenerate = true)
   private Long id;
 

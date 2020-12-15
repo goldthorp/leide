@@ -11,7 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.wisebison.leide.R;
-import com.wisebison.leide.model.DiaryEntryForm;
+import com.wisebison.leide.model.EntryForm;
 import com.wisebison.leide.util.Utils;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,15 +24,15 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
 
-public class DiaryEntryAdapter extends ArrayAdapter<DiaryEntryForm> {
+public class EntryAdapter extends ArrayAdapter<EntryForm> {
 
   // Keep items as a field here for convenient update method
-  private final ArrayList<DiaryEntryForm> items;
+  private final ArrayList<EntryForm> items;
 
   private final boolean showSentiment;
 
-  DiaryEntryAdapter(@NonNull final Context context, final ArrayList<DiaryEntryForm> items,
-                    final boolean showSentiment) {
+  EntryAdapter(@NonNull final Context context, final ArrayList<EntryForm> items,
+               final boolean showSentiment) {
     super(context, R.layout.row_diary_entry, items);
     this.items = items;
     this.showSentiment = showSentiment;
@@ -49,7 +49,7 @@ public class DiaryEntryAdapter extends ArrayAdapter<DiaryEntryForm> {
   @Override
   public View getView(final int position, @Nullable final View convertView,
                       @NonNull final ViewGroup parent) {
-    final DiaryEntryForm entry = Objects.requireNonNull(getItem(position));
+    final EntryForm entry = Objects.requireNonNull(getItem(position));
 
     final View customView;
     final ViewHolder viewHolder;
@@ -100,7 +100,7 @@ public class DiaryEntryAdapter extends ArrayAdapter<DiaryEntryForm> {
     return customView;
   }
 
-  void update(final List<DiaryEntryForm> entries) {
+  void update(final List<EntryForm> entries) {
     items.clear();
     items.addAll(entries);
     notifyDataSetChanged();

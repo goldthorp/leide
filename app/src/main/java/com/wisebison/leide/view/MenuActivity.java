@@ -15,8 +15,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.DiaryEntryDao;
-import com.wisebison.leide.model.DiaryEntry;
+import com.wisebison.leide.data.EntryDao;
+import com.wisebison.leide.model.Entry;
 import com.wisebison.leide.util.Utils;
 
 import java.io.FileNotFoundException;
@@ -78,9 +78,9 @@ public class MenuActivity extends AppCompatActivity {
 
     final StringBuilder stringBuilder = new StringBuilder();
     final AppDatabase appDatabase = AppDatabase.getInstance(this);
-    final DiaryEntryDao entryDao = appDatabase.getDiaryEntryDao();
+    final EntryDao entryDao = appDatabase.getDiaryEntryDao();
     entryDao.getAll().then(entries -> {
-      for (final DiaryEntry entry : entries) {
+      for (final Entry entry : entries) {
         stringBuilder.append(Utils.formatDate(entry.getStartTimestamp()));
         stringBuilder.append("\n");
         stringBuilder.append(entry.getText());

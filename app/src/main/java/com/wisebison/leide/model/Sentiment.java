@@ -13,16 +13,16 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@Entity(tableName = "diary-sentiment",
+@Entity(tableName = "sentiment",
   foreignKeys = @ForeignKey(
-    entity = DiaryEntry.class,
+    entity = Entry.class,
     parentColumns = "id",
     childColumns = "entry_fk",
     onDelete = ForeignKey.CASCADE),
   indices = @Index(
     name = "sentiment_entry_fk",
     value = "entry_fk"))
-public class DiarySentiment {
+public class Sentiment {
   @PrimaryKey
   private Long id;
 

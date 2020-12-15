@@ -23,8 +23,8 @@ import com.google.android.gms.common.util.CollectionUtils;
 import com.google.android.gms.location.LocationServices;
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.DiaryEntryDao;
-import com.wisebison.leide.model.DiaryEntry;
+import com.wisebison.leide.data.EntryDao;
+import com.wisebison.leide.model.Entry;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -36,7 +36,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class CreateDiaryEntryActivity extends AppCompatActivity {
+public class CreateEntryActivity extends AppCompatActivity {
 
   private long startTimestamp;
 
@@ -50,7 +50,7 @@ public class CreateDiaryEntryActivity extends AppCompatActivity {
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_diary_entry);
+    setContentView(R.layout.activity_create_entry);
 
     startTimestamp = System.currentTimeMillis();
 
@@ -124,7 +124,7 @@ public class CreateDiaryEntryActivity extends AppCompatActivity {
     recentAddressesAdapter.add("-");
 
     // Get recent locations
-    final DiaryEntryDao entryDao = AppDatabase.getInstance(this).getDiaryEntryDao();
+    final EntryDao entryDao = AppDatabase.getInstance(this).getDiaryEntryDao();
     final LiveData<List<String>> recentLocationsLiveData = entryDao.getRecentLocations();
     recentLocationsLiveData.observe(this, new Observer<List<String>>() {
       @Override
@@ -167,7 +167,7 @@ public class CreateDiaryEntryActivity extends AppCompatActivity {
 
   private void saveEntry(final String location, final String timeZone) {
     final EditText editText = findViewById(R.id.editText);
-    final DiaryEntry entry = new DiaryEntry();
+    final Entry entry = new Entry();
     entry.setText(editText.getText().toString());
     entry.setStartTimestamp(startTimestamp);
     entry.setSaveTimestamp(System.currentTimeMillis());
@@ -176,7 +176,7 @@ public class CreateDiaryEntryActivity extends AppCompatActivity {
 
     // Insert on a separate thread because otherwise room throws an error
     final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    final DiaryEntryDao entryDao = AppDatabase.getInstance(this).getDiaryEntryDao();
+    final EntryDao entryDao = AppDatabase.getInstance(this).getDiaryEntryDao();
     try {
       executorService.submit(() -> entryDao.insert(entry)).get();
       finish();

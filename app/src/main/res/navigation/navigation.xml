@@ -10,16 +10,16 @@
         android:name="com.wisebison.leide.view.EntryListFragment"
         android:label="EntryListFragment" >
         <action
-            android:id="@+id/action_entryListFragment_to_viewDiaryEntryFragment"
-            app:destination="@id/viewDiaryEntryFragment" />
+            android:id="@+id/action_entryListFragment_to_viewEntryFragment"
+            app:destination="@id/viewEntryFragment" />
     </fragment>
     <fragment
-        android:id="@+id/viewDiaryEntryFragment"
-        android:name="com.wisebison.leide.view.ViewDiaryEntryFragment"
-        android:label="fragment_view_diary_entry"
-        tools:layout="@layout/fragment_view_diary_entry">
+        android:id="@+id/viewEntryFragment"
+        android:name="com.wisebison.leide.view.ViewEntryFragment"
+        android:label="fragment_view_entry"
+        tools:layout="@layout/fragment_view_entry">
         <argument
-            android:name="diaryEntryId"
+            android:name="entryId"
             app:argType="long"/>
     </fragment>
 </navigation>

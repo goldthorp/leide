@@ -9,12 +9,12 @@ import com.wisebison.leide.R;
 import dagger.hilt.android.AndroidEntryPoint;
 
 @AndroidEntryPoint
-public class ViewDiaryActivity extends AppCompatActivity {
+public class ViewEntriesActivity extends AppCompatActivity {
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_view_diary);
+    setContentView(R.layout.activity_view_entries);
   }
 
   // Make the action bar back button navigate back

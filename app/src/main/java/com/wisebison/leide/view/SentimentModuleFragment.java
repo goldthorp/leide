@@ -12,7 +12,7 @@ import androidx.lifecycle.LiveData;
 
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.DiarySentimentDao;
+import com.wisebison.leide.data.SentimentDao;
 import com.wisebison.leide.model.Module;
 import com.wisebison.leide.util.BackgroundUtil;
 
@@ -31,7 +31,7 @@ public class SentimentModuleFragment extends TimeFrameModuleFragment {
     super(module);
   }
 
-  private DiarySentimentDao sentimentDao;
+  private SentimentDao sentimentDao;
 
   private LiveData<Long> sentimentCountLiveData;
   private Long sentimentCount;
@@ -76,8 +76,8 @@ public class SentimentModuleFragment extends TimeFrameModuleFragment {
             BackgroundUtil.doInBackground(() -> {
               final DateTime earliest = new DateTime(earliestTimestamp);
 
-              List<SentimentSummary> summaries = new ArrayList<>();
-              SentimentSummary summary24Hours = new SentimentSummary();
+              final List<SentimentSummary> summaries = new ArrayList<>();
+              final SentimentSummary summary24Hours = new SentimentSummary();
               summary24Hours.timeFrameId = TIME_FRAME_ITEM_24_HOURS_ID;
               final Pair<Long, Long> timeFrame24Hours = getTimeFrame(TIME_FRAME_ITEM_24_HOURS_ID);
               summary24Hours.average =
@@ -86,7 +86,7 @@ public class SentimentModuleFragment extends TimeFrameModuleFragment {
               if (summary24Hours.average != null) {
                 final Pair<Long, Long> timeFramePrevious24Hours =
                   getTimeFrame(TIME_FRAME_ITEM_24_HOURS_ID, -1);
-                Float averagePrevious24Hours =
+                final Float averagePrevious24Hours =
                   sentimentDao.getAverageSentiment(timeFramePrevious24Hours.first,
                     timeFramePrevious24Hours.second);
                 if (averagePrevious24Hours != null) {
@@ -102,7 +102,7 @@ public class SentimentModuleFragment extends TimeFrameModuleFragment {
 
               final Pair<Long, Long> timeFrame7Days = getTimeFrame(TIME_FRAME_ITEM_7_DAYS_ID);
               if (earliest.isBefore(DateTime.now().minusHours(24))) {
-                SentimentSummary summary7Days = new SentimentSummary();
+                final SentimentSummary summary7Days = new SentimentSummary();
                 summary7Days.timeFrameId = TIME_FRAME_ITEM_7_DAYS_ID;
                 summary7Days.average =
                   sentimentDao.getAverageSentiment(timeFrame7Days.first, timeFrame7Days.second);
@@ -110,7 +110,7 @@ public class SentimentModuleFragment extends TimeFrameModuleFragment {
                 if (summary7Days.average != null) {
                   final Pair<Long, Long> timeFramePrevious7Days =
                     getTimeFrame(TIME_FRAME_ITEM_7_DAYS_ID, -1);
-                  Float averagePrevious7Days =
+                  final Float averagePrevious7Days =
                     sentimentDao.getAverageSentiment(timeFramePrevious7Days.first,
                       timeFramePrevious7Days.second);
                   if (averagePrevious7Days != null) {
@@ -125,7 +125,7 @@ public class SentimentModuleFragment extends TimeFrameModuleFragment {
               }
 
               if (earliest.isBefore(DateTime.now().minusDays(7))) {
-                SentimentSummary summary30Days = new SentimentSummary();
+                final SentimentSummary summary30Days = new SentimentSummary();
                 summary30Days.timeFrameId = TIME_FRAME_ITEM_30_DAYS_ID;
                 final Pair<Long, Long> timeFrame30Days = getTimeFrame(TIME_FRAME_ITEM_30_DAYS_ID);
                 summary30Days.average =
@@ -134,7 +134,7 @@ public class SentimentModuleFragment extends TimeFrameModuleFragment {
                 if (summary30Days.average != null) {
                   final Pair<Long, Long> timeFramePrevious30Days =
                     getTimeFrame(TIME_FRAME_ITEM_30_DAYS_ID, -1);
-                  Float averagePrevious30Days =
+                  final Float averagePrevious30Days =
                     sentimentDao.getAverageSentiment(timeFramePrevious30Days.first,
                       timeFramePrevious30Days.second);
                   if (averagePrevious30Days != null) {

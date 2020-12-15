@@ -6,23 +6,20 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-import com.wisebison.leide.model.DiaryEntry;
-import com.wisebison.leide.model.DiaryNamedEntity;
-import com.wisebison.leide.model.DiarySentiment;
+import com.wisebison.leide.model.Entry;
 import com.wisebison.leide.model.Module;
-import com.wisebison.leide.model.SammyItem;
-import com.wisebison.leide.model.SammySession;
+import com.wisebison.leide.model.NamedEntity;
+import com.wisebison.leide.model.Sentiment;
 
-@Database(entities = {DiaryEntry.class, DiaryNamedEntity.class, DiarySentiment.class,
-  SammySession.class, SammyItem.class, Module.class}, version = 1,
-  exportSchema = false)
+@Database(entities = {Entry.class, NamedEntity.class, Sentiment.class, Module.class},
+  version = 1, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
   private static AppDatabase INSTANCE;
 
-  public abstract DiaryEntryDao getDiaryEntryDao();
-  public abstract DiaryNamedEntityDao getDiaryNamedEntityDao();
-  public abstract DiarySentimentDao getDiarySentimentDao();
+  public abstract EntryDao getDiaryEntryDao();
+  public abstract NamedEntityDao getDiaryNamedEntityDao();
+  public abstract SentimentDao getDiarySentimentDao();
 
   public abstract ModuleDao getModuleDao();
 

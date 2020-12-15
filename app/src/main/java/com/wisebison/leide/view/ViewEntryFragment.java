@@ -14,13 +14,13 @@ import androidx.fragment.app.Fragment;
 
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.DiaryEntryDao;
-import com.wisebison.leide.model.DiaryEntry;
+import com.wisebison.leide.data.EntryDao;
+import com.wisebison.leide.model.Entry;
 import com.wisebison.leide.util.Utils;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class ViewDiaryEntryFragment extends Fragment {
+public class ViewEntryFragment extends Fragment {
 
   private TextView dateTextView;
   private TextView locationTextView;
@@ -28,17 +28,17 @@ public class ViewDiaryEntryFragment extends Fragment {
   private Button previousButton;
   private Button nextButton;
 
-  private DiaryEntry previousEntry;
-  private DiaryEntry nextEntry;
+  private Entry previousEntry;
+  private Entry nextEntry;
 
-  private DiaryEntryDao diaryEntryDao;
+  private EntryDao diaryEntryDao;
 
   @Nullable
   @Override
   public View onCreateView(
     @NonNull final LayoutInflater inflater, @Nullable final ViewGroup container,
     @Nullable final Bundle savedInstanceState) {
-    final View root = inflater.inflate(R.layout.fragment_view_diary_entry, container, false);
+    final View root = inflater.inflate(R.layout.fragment_view_entry, container, false);
 
     dateTextView = root.findViewById(R.id.entry_date_text_view);
     locationTextView = root.findViewById(R.id.entry_location_text_view);
@@ -48,9 +48,8 @@ public class ViewDiaryEntryFragment extends Fragment {
 
     final ConstraintLayout layout = root.findViewById(R.id.view_entry_layout);
 
-    final ViewDiaryEntryFragmentArgs args =
-      ViewDiaryEntryFragmentArgs.fromBundle(requireArguments());
-    final long entryId = args.getDiaryEntryId();
+    final ViewEntryFragmentArgs args = ViewEntryFragmentArgs.fromBundle(requireArguments());
+    final long entryId = args.getEntryId();
 
     diaryEntryDao = AppDatabase.getInstance(requireContext()).getDiaryEntryDao();
     diaryEntryDao.getById(entryId).then(entry -> {
@@ -67,7 +66,7 @@ public class ViewDiaryEntryFragment extends Fragment {
     return root;
   }
 
-  private void setEntry(final DiaryEntry entry) {
+  private void setEntry(final Entry entry) {
     dateTextView.setText(Utils.formatDate(entry.getStartTimestamp()));
     if (StringUtils.isNotBlank(entry.getLocation())) {
       locationTextView.setText(entry.getLocation());

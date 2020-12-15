@@ -13,8 +13,8 @@ import com.google.api.services.language.v1.CloudNaturalLanguageScopes;
 import com.wisebison.leide.R;
 import com.wisebison.leide.billing.BillingUtil;
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.DiaryEntryDao;
-import com.wisebison.leide.model.DiaryEntry;
+import com.wisebison.leide.data.EntryDao;
+import com.wisebison.leide.model.Entry;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -33,7 +33,7 @@ public class AnalyzeFragment extends Fragment {
   BillingUtil billingUtil;
 
   private AppDatabase db;
-  private DiaryEntryDao entryDao;
+  private EntryDao entryDao;
 
   private boolean running;
   private boolean analysisInProgress;
@@ -65,7 +65,7 @@ public class AnalyzeFragment extends Fragment {
     entryDao.getAllUnanalyzedOnce().then(this::analyze);
   }
 
-  private void analyze(final List<DiaryEntry> entries) {
+  private void analyze(final List<Entry> entries) {
     billingUtil.hasPremium(hasPremium -> {
       if (!hasPremium) {
         Log.d(TAG, "user is not subscribed to premium");
@@ -116,7 +116,7 @@ public class AnalyzeFragment extends Fragment {
           final GoogleCredential credential = new GoogleCredential()
             .setAccessToken(token)
             .createScoped(CloudNaturalLanguageScopes.all());
-          new AnalyzeTask(taskCallbacks, db, credential).execute(entries.toArray(new DiaryEntry[0]));
+          new AnalyzeTask(taskCallbacks, db, credential).execute(entries.toArray(new Entry[0]));
         });
       }
     });

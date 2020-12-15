@@ -22,10 +22,10 @@
             </intent-filter>
         </activity>
         <activity android:name=".view.MenuActivity" />
-        <activity android:name=".view.ViewDiaryActivity" />
+        <activity android:name=".view.ViewEntriesActivity" />
         <activity android:name=".view.MainActivity" />
         <activity android:name=".view.auth.LoginActivity" />
-        <activity android:name=".view.CreateDiaryEntryActivity" />
+        <activity android:name=".view.CreateEntryActivity" />
     </application>
 
 </manifest>

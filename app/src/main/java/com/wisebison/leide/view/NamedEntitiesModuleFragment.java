@@ -21,9 +21,9 @@ import androidx.lifecycle.LiveData;
 import com.google.android.gms.common.util.CollectionUtils;
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.DiaryNamedEntityDao;
-import com.wisebison.leide.model.DiaryNamedEntityForm;
+import com.wisebison.leide.data.NamedEntityDao;
 import com.wisebison.leide.model.Module;
+import com.wisebison.leide.model.NamedEntityForm;
 
 import org.joda.time.DateTime;
 
@@ -47,7 +47,7 @@ public class NamedEntitiesModuleFragment extends TimeFrameModuleFragment {
 
   private ProgressBar entitiesProgressBar;
 
-  private DiaryNamedEntityDao namedEntityDao;
+  private NamedEntityDao namedEntityDao;
 
   private LiveData<Long> entityCountLiveData;
   private Long entityCount;
@@ -130,13 +130,13 @@ public class NamedEntitiesModuleFragment extends TimeFrameModuleFragment {
 
       final DateTime earliest = earliestDate[0];
 
-      final DiaryNamedEntityDao namedEntityDao = fragment.namedEntityDao;
+      final NamedEntityDao namedEntityDao = fragment.namedEntityDao;
 
       final Map<String, SpannableString> results = new LinkedHashMap<>();
 
       // add 24 hrs
       final Pair<Long, Long> timeFrame24Hours = getTimeFrame(TIME_FRAME_ITEM_24_HOURS_ID);
-      final List<DiaryNamedEntityForm> namedEntityForms24Hours =
+      final List<NamedEntityForm> namedEntityForms24Hours =
         namedEntityDao.countEntitiesByName(timeFrame24Hours.first, timeFrame24Hours.second);
       results.put(fragment.getString(R.string.timeframe_24_hours),
         processEntities(namedEntityForms24Hours));
@@ -144,7 +144,7 @@ public class NamedEntitiesModuleFragment extends TimeFrameModuleFragment {
       if (earliest.isBefore(DateTime.now().minusHours(24))) {
         // add 7 days
         final Pair<Long, Long> timeFrame7Days = getTimeFrame(TIME_FRAME_ITEM_7_DAYS_ID);
-        final List<DiaryNamedEntityForm> namedEntityForms7Days =
+        final List<NamedEntityForm> namedEntityForms7Days =
           namedEntityDao.countEntitiesByName(timeFrame7Days.first, timeFrame7Days.second);
         results.put(fragment.getString(R.string.timeframe_7_days),
           processEntities(namedEntityForms7Days));
@@ -152,7 +152,7 @@ public class NamedEntitiesModuleFragment extends TimeFrameModuleFragment {
       if (earliest.isBefore(DateTime.now().minusDays(7))) {
         // add 30 days
         final Pair<Long, Long> timeFrame30Days = getTimeFrame(TIME_FRAME_ITEM_30_DAYS_ID);
-        final List<DiaryNamedEntityForm> namedEntityForms30Days =
+        final List<NamedEntityForm> namedEntityForms30Days =
           namedEntityDao.countEntitiesByName(timeFrame30Days.first, timeFrame30Days.second);
         results.put(fragment.getString(R.string.timeframe_30_days), 
           processEntities(namedEntityForms30Days));
@@ -167,7 +167,7 @@ public class NamedEntitiesModuleFragment extends TimeFrameModuleFragment {
      * @param namedEntityForms entities to process (text + count)
      * @return SpannableString with spans set for font size and color
      */
-    private SpannableString processEntities(final List<DiaryNamedEntityForm> namedEntityForms) {
+    private SpannableString processEntities(final List<NamedEntityForm> namedEntityForms) {
       final NamedEntitiesModuleFragment fragment = fragmentReference.get();
       if (CollectionUtils.isEmpty(namedEntityForms)) {
         return null;
@@ -181,7 +181,7 @@ public class NamedEntitiesModuleFragment extends TimeFrameModuleFragment {
       // Build the string and create the spans to apply to the SpannableString
       final StringBuilder sb = new StringBuilder();
       for (int i = 0; i < namedEntityForms.size(); i++) {
-        final DiaryNamedEntityForm entity = namedEntityForms.get(i);
+        final NamedEntityForm entity = namedEntityForms.get(i);
         final int start = sb.length();
         final int end = start + entity.getName().length();
         sb.append(entity.getName());

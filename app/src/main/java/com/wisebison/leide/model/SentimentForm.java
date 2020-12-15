@@ -9,7 +9,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class DiarySentimentForm {
+public class SentimentForm {
   @ColumnInfo(name = "score")
   private float score;
 

@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements ColorPickerDialog
 
     final FloatingActionButton newEntryFab = findViewById(R.id.new_entry_fab);
     newEntryFab.setOnClickListener(v -> {
-      final Intent intent = new Intent(this, CreateDiaryEntryActivity.class);
+      final Intent intent = new Intent(this, CreateEntryActivity.class);
       startActivity(intent);
     });
   }

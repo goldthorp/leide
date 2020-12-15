@@ -16,14 +16,13 @@ import com.google.api.services.language.v1.model.Document;
 import com.google.api.services.language.v1.model.Entity;
 import com.google.api.services.language.v1.model.EntityMention;
 import com.google.api.services.language.v1.model.Sentence;
-import com.google.api.services.language.v1.model.Sentiment;
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.DiaryEntryDao;
-import com.wisebison.leide.data.DiaryNamedEntityDao;
-import com.wisebison.leide.data.DiarySentimentDao;
-import com.wisebison.leide.model.DiaryEntry;
-import com.wisebison.leide.model.DiaryNamedEntity;
-import com.wisebison.leide.model.DiarySentiment;
+import com.wisebison.leide.data.EntryDao;
+import com.wisebison.leide.data.NamedEntityDao;
+import com.wisebison.leide.data.SentimentDao;
+import com.wisebison.leide.model.Entry;
+import com.wisebison.leide.model.NamedEntity;
+import com.wisebison.leide.model.Sentiment;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -39,7 +38,7 @@ import lombok.EqualsAndHashCode;
 /**
  * Queries the GCNLAPI and saves the results in the database.
  */
-class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
+class AnalyzeTask extends AsyncTask<Entry, Integer, Void> {
 
   private static final String TAG = "AnalyzeTask";
 
@@ -53,17 +52,17 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
   /**
    * For marking entries as analyzed.
    */
-  private final DiaryEntryDao entryDao;
+  private final EntryDao entryDao;
 
   /**
    * For saving the results of the named entity queries.
    */
-  private final DiaryNamedEntityDao namedEntityDao;
+  private final NamedEntityDao namedEntityDao;
 
   /**
    * For saving the results of the sentiment queries.
    */
-  private final DiarySentimentDao sentimentDao;
+  private final SentimentDao sentimentDao;
 
   /**
    * The API.
@@ -81,12 +80,12 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
   }
 
   @Override
-  protected Void doInBackground(final DiaryEntry... entries) {
+  protected Void doInBackground(final Entry... entries) {
     // Analyze the specified entries, save the results, and mark the entries as analyzed.
     int analyzedCount = 0;
-    final Collection<DiaryNamedEntity> entities = new ArrayList<>();
-    final Collection<DiarySentiment> sentiments = new ArrayList<>();
-    for (final DiaryEntry entry : entries) {
+    final Collection<NamedEntity> entities = new ArrayList<>();
+    final Collection<Sentiment> sentiments = new ArrayList<>();
+    for (final Entry entry : entries) {
       if (!entry.isEntitiesAnalyzed()) {
         try {
           // Perform the query.
@@ -136,7 +135,7 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
    * @return the named entities from the entry's text
    * @throws IOException querying the GCNLAPI
    */
-  private Collection<DiaryNamedEntity> requestNamedEntities(final DiaryEntry entry) throws IOException {
+  private Collection<NamedEntity> requestNamedEntities(final Entry entry) throws IOException {
     // Query the API.
     final AnalyzeEntitiesResponse entitiesResponse =
         api.documents().analyzeEntities(new AnalyzeEntitiesRequest()
@@ -148,11 +147,11 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
     final List<Entity> entities = entitiesResponse.getEntities();
     // Use a map for the entities to save to prevent duplicates. The API can count the same entity
     // more than once if it has multiple types (e.g. 1975 is both NUMBER and DATE)
-    final Map<DiaryNamedEntityKey, DiaryNamedEntity> namedEntities = new HashMap<>();
+    final Map<NamedEntityKey, NamedEntity> namedEntities = new HashMap<>();
     for (final Entity entity : entities) {
       // Iterate over all mentions of this entity in the entry
       for (final EntityMention mention : entity.getMentions()) {
-        final DiaryNamedEntity namedEntity = new DiaryNamedEntity();
+        final NamedEntity namedEntity = new NamedEntity();
         namedEntity.setEntryId(entry.getId());
         namedEntity.setName(entity.getName());
         namedEntity.setType(entity.getType());
@@ -161,8 +160,8 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
         namedEntity.setContent(mention.getText().getContent());
         // Before adding, see if this entity already exists. If so, just append the type onto the
         // existing entity's type, separated by a comma
-        final DiaryNamedEntityKey key = new DiaryNamedEntityKey(namedEntity, mention);
-        final DiaryNamedEntity existingEntity = namedEntities.get(key);
+        final NamedEntityKey key = new NamedEntityKey(namedEntity, mention);
+        final NamedEntity existingEntity = namedEntities.get(key);
         if (existingEntity == null) {
           namedEntities.put(key, namedEntity);
         } else {
@@ -174,11 +173,11 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
   }
 
   @EqualsAndHashCode
-  private class DiaryNamedEntityKey {
+  private class NamedEntityKey {
     Long entryId;
     String name;
     int beginOffset;
-    private DiaryNamedEntityKey(final DiaryNamedEntity entity, final EntityMention mention) {
+    private NamedEntityKey(final NamedEntity entity, final EntityMention mention) {
       entryId = entity.getEntryId();
       name = entity.getName();
       beginOffset = mention.getText().getBeginOffset();
@@ -192,7 +191,7 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
    * @return the sentiment of the text for the entry
    * @throws IOException querying the GCNLAPI
    */
-  private List<DiarySentiment> requestSentiment(final DiaryEntry entry) throws IOException {
+  private List<Sentiment> requestSentiment(final Entry entry) throws IOException {
     final AnalyzeSentimentResponse sentimentResponse =
         api.documents().analyzeSentiment(new AnalyzeSentimentRequest()
           .setDocument(new Document()
@@ -200,15 +199,15 @@ class AnalyzeTask extends AsyncTask<DiaryEntry, Integer, Void> {
             .setType("PLAIN_TEXT"))
           .setEncodingType("Utf16")).execute();
     // Convert the results to Sentiment objects
-    final List<DiarySentiment> results = new ArrayList<>();
-    final Sentiment documentSentiment = sentimentResponse.getDocumentSentiment();
-    final DiarySentiment sentiment = new DiarySentiment();
+    final List<Sentiment> results = new ArrayList<>();
+    final com.google.api.services.language.v1.model.Sentiment documentSentiment = sentimentResponse.getDocumentSentiment();
+    final Sentiment sentiment = new Sentiment();
     sentiment.setEntryId(entry.getId());
     sentiment.setScore(documentSentiment.getScore());
     sentiment.setMagnitude(documentSentiment.getMagnitude());
     results.add(sentiment);
     for (final Sentence sentence : sentimentResponse.getSentences()) {
-      final DiarySentiment sentenceSentiment = new DiarySentiment();
+      final Sentiment sentenceSentiment = new Sentiment();
       sentenceSentiment.setEntryId(entry.getId());
       sentenceSentiment.setScore(sentence.getSentiment().getScore());
       sentenceSentiment.setMagnitude(sentence.getSentiment().getMagnitude());
