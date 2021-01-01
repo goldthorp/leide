@@ -14,22 +14,25 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@EqualsAndHashCode(of = {"name", "entryId", "beginOffset"})
+@EqualsAndHashCode(of = {"name", "entryComponentId", "beginOffset"})
 @Entity(tableName = "named_entity",
   foreignKeys = @ForeignKey(
-    entity = Entry.class,
+    entity = EntryComponent.class,
     parentColumns = "id",
-    childColumns = "entry_fk",
+    childColumns = "entry_component_fk",
     onDelete = ForeignKey.CASCADE),
   indices = @Index(
-    name = "named_entity_entry_fk",
-    value = "entry_fk"))
+    name = "named_entity_entry_component_fk",
+    value = "entry_component_fk"))
 public class NamedEntity {
   @PrimaryKey(autoGenerate = true)
   private Long id;
 
   @ColumnInfo(name = "entry_fk")
   private Long entryId;
+
+  @ColumnInfo(name = "entry_component_fk")
+  private Long entryComponentId;
 
   /**
    * @see com.google.api.services.language.v1.model.Entity#getName()

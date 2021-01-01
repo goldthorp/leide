@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
@@ -15,9 +16,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.EntryDao;
-import com.wisebison.leide.model.Entry;
-import com.wisebison.leide.util.Utils;
+import com.wisebison.leide.data.EntryComponentDao;
+import com.wisebison.leide.model.EntryComponent;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -26,8 +31,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.TimeZone;
 
 public class MenuActivity extends AppCompatActivity {
+
+  private static final String TAG = "MenuActivity";
 
   private static final int CREATE_FILE_REQUEST_CODE = 1;
 
@@ -78,15 +86,42 @@ public class MenuActivity extends AppCompatActivity {
 
     final StringBuilder stringBuilder = new StringBuilder();
     final AppDatabase appDatabase = AppDatabase.getInstance(this);
-    final EntryDao entryDao = appDatabase.getDiaryEntryDao();
-    entryDao.getAll().then(entries -> {
-      for (final Entry entry : entries) {
-        stringBuilder.append(Utils.formatDate(entry.getStartTimestamp()));
-        stringBuilder.append("\n");
-        stringBuilder.append(entry.getText());
-        stringBuilder.append("\n\n");
+    final EntryComponentDao entryComponentDao = appDatabase.getEntryComponentDao();
+    entryComponentDao.getAll().then(components -> {
+      if (CollectionUtils.isEmpty(components)) {
+        Log.d(TAG, "Attempting to export empty components " + components);
+        return;
       }
       try {
+        final long firstEntryId = components.get(0).getEntryId();
+        for (final EntryComponent component : components) {
+          if (component.getEntryId() != firstEntryId && component.getListSeq() == 0) {
+            stringBuilder.append("\n");
+          }
+          try {
+            switch (component.getType()) {
+              case TEXT:
+                stringBuilder.append(component.getValue());
+                break;
+              case DATE:
+                final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
+                final JSONObject dateJson = new JSONObject(component.getValue());
+                if (dateJson.has("timeZone") &&
+                  StringUtils.isNotBlank(dateJson.getString("timeZone"))) {
+                  sdf.setTimeZone(TimeZone.getTimeZone(dateJson.getString("timeZone")));
+                }
+                stringBuilder.append(sdf.format(new Date(dateJson.getLong("millis"))));
+                break;
+              case LOCATION:
+                final JSONObject locationJson = new JSONObject(component.getValue());
+                stringBuilder.append(locationJson.getString("display"));
+                break;
+            }
+          } catch (final JSONException e) {
+            e.printStackTrace();
+          }
+          stringBuilder.append("\n");
+        }
         fos.write(stringBuilder.toString().getBytes());
         fos.close();
         pfd.close();

@@ -16,9 +16,12 @@ import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.EntryDao;
 import com.wisebison.leide.model.Entry;
+import com.wisebison.leide.model.EntryComponent;
+import com.wisebison.leide.model.EntryForm;
 import com.wisebison.leide.util.Utils;
 
-import org.apache.commons.lang3.StringUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class ViewEntryFragment extends Fragment {
 
@@ -51,47 +54,70 @@ public class ViewEntryFragment extends Fragment {
     final ViewEntryFragmentArgs args = ViewEntryFragmentArgs.fromBundle(requireArguments());
     final long entryId = args.getEntryId();
 
-    diaryEntryDao = AppDatabase.getInstance(requireContext()).getDiaryEntryDao();
+    diaryEntryDao = AppDatabase.getInstance(requireContext()).getEntryDao();
     diaryEntryDao.getById(entryId).then(entry -> {
-      setEntry(entry);
-      layout.setVisibility(View.VISIBLE);
+      try {
+        setEntry(entry);
+        layout.setVisibility(View.VISIBLE);
+      } catch (final JSONException e) {
+        e.printStackTrace();
+      }
     });
 
-    // Go to the previous entry
-    previousButton.setOnClickListener(v -> setEntry(previousEntry));
-
-    // Go to the next entry
-    nextButton.setOnClickListener(v -> setEntry(nextEntry));
+    // FIXME
+//    // Go to the previous entry
+//    previousButton.setOnClickListener(v -> setEntry(previousEntry));
+//
+//    // Go to the next entry
+//    nextButton.setOnClickListener(v -> setEntry(nextEntry));
 
     return root;
   }
 
-  private void setEntry(final Entry entry) {
-    dateTextView.setText(Utils.formatDate(entry.getStartTimestamp()));
-    if (StringUtils.isNotBlank(entry.getLocation())) {
-      locationTextView.setText(entry.getLocation());
-      locationTextView.setVisibility(View.VISIBLE);
-    } else {
+  private void setEntry(final EntryForm entry) throws JSONException {
+    //FIXME
+//    dateTextView.setText(Utils.formatDate(entry.getStartTimestamp()));
+//    if (StringUtils.isNotBlank(entry.getLocation())) {
+//      locationTextView.setText(entry.getLocation());
+//      locationTextView.setVisibility(View.VISIBLE);
+//    } else {
       locationTextView.setVisibility(View.GONE);
+//    }
+//    textTextView.setText(entry.getText());
+    for (final EntryComponent component : entry.getComponents()) {
+      switch (component.getType()) {
+        case DATE:
+          final JSONObject dateValue = new JSONObject(component.getValue());
+          dateTextView.setText(
+            Utils.formatDate(dateValue.getLong("millis"), dateValue.getString("timeZone")));
+          break;
+        case LOCATION:
+          final JSONObject locationValue = new JSONObject(component.getValue());
+          locationTextView.setText(locationValue.getString("display"));
+          locationTextView.setVisibility(View.VISIBLE);
+          break;
+        case TEXT:
+          textTextView.setText(component.getValue());
+      }
     }
-    textTextView.setText(entry.getText());
-    // Pre-load the previous and next entries to show if the previous/next entry buttons are
-    // clicked
-    diaryEntryDao.getPrevious(entry.getStartTimestamp()).then(previous -> {
-      previousEntry = previous;
-      if (previousEntry == null) {
-        previousButton.setVisibility(View.GONE);
-      } else {
-        previousButton.setVisibility(View.VISIBLE);
-      }
-    });
-    diaryEntryDao.getNext(entry.getStartTimestamp()).then(next -> {
-      nextEntry = next;
-      if (nextEntry == null) {
-        nextButton.setVisibility(View.GONE);
-      } else {
-        nextButton.setVisibility(View.VISIBLE);
-      }
-    });
+    // FIXME
+//    // Pre-load the previous and next entries to show if the previous/next entry buttons are
+//    // clicked
+//    diaryEntryDao.getPrevious(entry.getStartTimestamp()).then(previous -> {
+//      previousEntry = previous;
+//      if (previousEntry == null) {
+//        previousButton.setVisibility(View.GONE);
+//      } else {
+//        previousButton.setVisibility(View.VISIBLE);
+//      }
+//    });
+//    diaryEntryDao.getNext(entry.getStartTimestamp()).then(next -> {
+//      nextEntry = next;
+//      if (nextEntry == null) {
+//        nextButton.setVisibility(View.GONE);
+//      } else {
+//        nextButton.setVisibility(View.VISIBLE);
+//      }
+//    });
   }
 }

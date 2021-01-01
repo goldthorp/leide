@@ -52,7 +52,7 @@ public class SentimentModuleFragment extends TimeFrameModuleFragment {
 
     final AppDatabase db = AppDatabase.getInstance(requireContext());
 
-    sentimentDao = db.getDiarySentimentDao();
+    sentimentDao = db.getSentimentDao();
 
     sentimentCountLiveData = sentimentDao.getCount();
 

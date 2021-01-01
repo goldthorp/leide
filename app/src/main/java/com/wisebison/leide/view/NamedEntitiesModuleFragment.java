@@ -69,7 +69,7 @@ public class NamedEntitiesModuleFragment extends TimeFrameModuleFragment {
 
     final AppDatabase db = AppDatabase.getInstance(requireContext());
 
-    namedEntityDao = db.getDiaryNamedEntityDao();
+    namedEntityDao = db.getNamedEntityDao();
 
     entityCountLiveData = namedEntityDao.getCount();
 

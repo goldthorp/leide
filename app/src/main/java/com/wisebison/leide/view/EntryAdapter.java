@@ -11,10 +11,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.wisebison.leide.R;
+import com.wisebison.leide.model.EntryComponent;
 import com.wisebison.leide.model.EntryForm;
 import com.wisebison.leide.util.Utils;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -71,19 +74,30 @@ public class EntryAdapter extends ArrayAdapter<EntryForm> {
       viewHolder = (ViewHolder) convertView.getTag();
     }
 
-    final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
-    if (StringUtils.isNotBlank(entry.getTimeZone())) {
-      sdf.setTimeZone(TimeZone.getTimeZone(entry.getTimeZone()));
-    }
-    viewHolder.date.setText(sdf.format(new Date(entry.getTimestamp())));
-
-    viewHolder.text.setText(entry.getText());
-
-    if (StringUtils.isNotBlank(entry.getLocation())) {
-      viewHolder.location.setText(entry.getLocation());
-      viewHolder.location.setVisibility(View.VISIBLE);
-    } else {
-      viewHolder.location.setVisibility(View.GONE);
+    try {
+      for (final EntryComponent component : entry.getComponents()) {
+        switch (component.getType()) {
+          case TEXT:
+            viewHolder.text.setText(component.getValue());
+            break;
+          case DATE:
+            final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
+            final JSONObject dateJson = new JSONObject(component.getValue());
+            if (dateJson.has("timeZone") &&
+              StringUtils.isNotBlank(dateJson.getString("timeZone"))) {
+              sdf.setTimeZone(TimeZone.getTimeZone(dateJson.getString("timeZone")));
+            }
+            viewHolder.date.setText(sdf.format(new Date(dateJson.getLong("millis"))));
+            break;
+          case LOCATION:
+            final JSONObject locationJson = new JSONObject(component.getValue());
+            viewHolder.location.setText(locationJson.getString("display"));
+            viewHolder.location.setVisibility(View.VISIBLE);
+            break;
+        }
+      }
+    } catch (final JSONException e) {
+      e.printStackTrace();
     }
 
     if (showSentiment) {

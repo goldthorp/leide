@@ -1,8 +1,11 @@
 package com.wisebison.leide.util;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class Utils {
   /**
@@ -26,7 +29,21 @@ public class Utils {
    * @return formatted date
    */
   public static String formatDate(final long millis) {
+    return formatDate(millis, null);
+  }
+
+  /**
+   * Format unix epoch millis to a readable date/time.
+   *
+   * @param millis    to format
+   * @param timeZone  (optional) timezone for formatting
+   * @return formatted date
+   */
+  public static String formatDate(final long millis, final String timeZone) {
     final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
+    if (StringUtils.isNotBlank(timeZone)) {
+      sdf.setTimeZone(TimeZone.getTimeZone(timeZone));
+    }
     return sdf.format(millis);
   }
 }

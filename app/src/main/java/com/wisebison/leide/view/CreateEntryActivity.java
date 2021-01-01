@@ -16,17 +16,19 @@ import android.widget.Spinner;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.Observer;
 
 import com.google.android.gms.common.util.CollectionUtils;
 import com.google.android.gms.location.LocationServices;
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
+import com.wisebison.leide.data.EntryComponentDao;
 import com.wisebison.leide.data.EntryDao;
 import com.wisebison.leide.model.Entry;
+import com.wisebison.leide.model.EntryComponentType;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.List;
@@ -124,16 +126,17 @@ public class CreateEntryActivity extends AppCompatActivity {
     recentAddressesAdapter.add("-");
 
     // Get recent locations
-    final EntryDao entryDao = AppDatabase.getInstance(this).getDiaryEntryDao();
-    final LiveData<List<String>> recentLocationsLiveData = entryDao.getRecentLocations();
-    recentLocationsLiveData.observe(this, new Observer<List<String>>() {
-      @Override
-      public void onChanged(final List<String> strings) {
-        // Remove observer immediately since this is a one-time thing
-        recentLocationsLiveData.removeObserver(this);
-
-        // Populate spinner with the 5 most recent addresses
-        recentAddressesAdapter.addAll(strings);
+    final EntryComponentDao entryComponentDao =
+      AppDatabase.getInstance(this).getEntryComponentDao();
+    entryComponentDao.getRecentLocations().then(locationJsonStrings -> {
+      // Populate spinner with the 5 most recent addresses
+      for (final String locationJsonString : locationJsonStrings) {
+        try {
+          final JSONObject locationJson = new JSONObject(locationJsonString);
+          recentAddressesAdapter.add(locationJson.getString("display"));
+        } catch (final JSONException e) {
+          e.printStackTrace();
+        }
         recentLocationsSpinner.setAdapter(recentAddressesAdapter);
       }
     });
@@ -156,8 +159,12 @@ public class CreateEntryActivity extends AppCompatActivity {
         .setTitle(getString(R.string.set_location))
         .setView(dialogLayout)
         .setPositiveButton(R.string.save, (dialog, which) -> {
-          saveEntry(locationEditText.getText().toString(),
-              (String) timeZoneSpinner.getSelectedItem());
+          try {
+            saveEntry(locationEditText.getText().toString(),
+                (String) timeZoneSpinner.getSelectedItem());
+          } catch (final JSONException e) {
+            e.printStackTrace();
+          }
         }).create();
   }
 
@@ -165,18 +172,25 @@ public class CreateEntryActivity extends AppCompatActivity {
     locationDialog.show();
   }
 
-  private void saveEntry(final String location, final String timeZone) {
+  private void saveEntry(final String location, final String timeZone) throws JSONException {
     final EditText editText = findViewById(R.id.editText);
     final Entry entry = new Entry();
-    entry.setText(editText.getText().toString());
     entry.setStartTimestamp(startTimestamp);
     entry.setSaveTimestamp(System.currentTimeMillis());
-    entry.setLocation(location);
-    entry.setTimeZone(timeZone);
+    final JSONObject dateValue = new JSONObject();
+    dateValue.put("millis", System.currentTimeMillis());
+    dateValue.put("timeZone", timeZone);
+    entry.addComponent(EntryComponentType.DATE, dateValue.toString());
+    if (StringUtils.isNotBlank(location)) {
+      final JSONObject locationValue = new JSONObject();
+      locationValue.put("display", location);
+      entry.addComponent(EntryComponentType.LOCATION, locationValue.toString());
+    }
+    entry.addComponent(EntryComponentType.TEXT, editText.getText().toString());
 
     // Insert on a separate thread because otherwise room throws an error
     final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    final EntryDao entryDao = AppDatabase.getInstance(this).getDiaryEntryDao();
+    final EntryDao entryDao = AppDatabase.getInstance(this).getEntryDao();
     try {
       executorService.submit(() -> entryDao.insert(entry)).get();
       finish();

@@ -39,7 +39,7 @@ abstract class TimeFrameModuleFragment extends ModuleFragment {
   public View onCreateView(
     @NonNull final LayoutInflater inflater, @Nullable final ViewGroup container,
     @Nullable final Bundle savedInstanceState) {
-    entryDao = AppDatabase.getInstance(requireContext()).getDiaryEntryDao();
+    entryDao = AppDatabase.getInstance(requireContext()).getEntryDao();
     return super.onCreateView(inflater, container, savedInstanceState);
   }
 

@@ -17,10 +17,11 @@ import com.google.api.services.language.v1.model.Entity;
 import com.google.api.services.language.v1.model.EntityMention;
 import com.google.api.services.language.v1.model.Sentence;
 import com.wisebison.leide.data.AppDatabase;
+import com.wisebison.leide.data.EntryComponentDao;
 import com.wisebison.leide.data.EntryDao;
 import com.wisebison.leide.data.NamedEntityDao;
 import com.wisebison.leide.data.SentimentDao;
-import com.wisebison.leide.model.Entry;
+import com.wisebison.leide.model.EntryComponent;
 import com.wisebison.leide.model.NamedEntity;
 import com.wisebison.leide.model.Sentiment;
 
@@ -38,7 +39,7 @@ import lombok.EqualsAndHashCode;
 /**
  * Queries the GCNLAPI and saves the results in the database.
  */
-class AnalyzeTask extends AsyncTask<Entry, Integer, Void> {
+class AnalyzeTask extends AsyncTask<EntryComponent, Integer, Void> {
 
   private static final String TAG = "AnalyzeTask";
 
@@ -53,6 +54,8 @@ class AnalyzeTask extends AsyncTask<Entry, Integer, Void> {
    * For marking entries as analyzed.
    */
   private final EntryDao entryDao;
+
+  private final EntryComponentDao entryComponentDao;
 
   /**
    * For saving the results of the named entity queries.
@@ -72,47 +75,48 @@ class AnalyzeTask extends AsyncTask<Entry, Integer, Void> {
   AnalyzeTask(final Callbacks callbacks, final AppDatabase db,
               final GoogleCredential credential) {
     this.callbacks = callbacks;
-    entryDao = db.getDiaryEntryDao();
-    namedEntityDao = db.getDiaryNamedEntityDao();
-    sentimentDao = db.getDiarySentimentDao();
+    entryDao = db.getEntryDao();
+    entryComponentDao = db.getEntryComponentDao();
+    namedEntityDao = db.getNamedEntityDao();
+    sentimentDao = db.getSentimentDao();
     api = new CloudNaturalLanguage.Builder(
         new NetHttpTransport(), JacksonFactory.getDefaultInstance(), credential).build();
   }
 
   @Override
-  protected Void doInBackground(final Entry... entries) {
-    // Analyze the specified entries, save the results, and mark the entries as analyzed.
+  protected Void doInBackground(final EntryComponent... components) {
+    // Analyze the specified components, save the results, and mark the components as analyzed.
     int analyzedCount = 0;
     final Collection<NamedEntity> entities = new ArrayList<>();
     final Collection<Sentiment> sentiments = new ArrayList<>();
-    for (final Entry entry : entries) {
-      if (!entry.isEntitiesAnalyzed()) {
+    for (final EntryComponent component : components) {
+      if (!component.isEntitiesAnalyzed()) {
         try {
-          // Perform the query.
-          entities.addAll(requestNamedEntities(entry));
+            // Perform the query.
+          entities.addAll(requestNamedEntities(component));
           // Mark this entry as analyzed.
-          entry.setEntitiesAnalyzed(true);
+          component.setEntitiesAnalyzed(true);
         } catch (final IOException e) {
           if (e instanceof GoogleJsonResponseException) {
-            entry.setEntitiesAnalyzed(true);
+            component.setEntitiesAnalyzed(true);
           }
           Log.e(TAG, "failed to analyze entities", e);
         }
       }
-      if (!entry.isSentimentAnalyzed()) {
+      if (!component.isSentimentAnalyzed()) {
         try {
           // Perform the query
-          sentiments.addAll(requestSentiment(entry));
+          sentiments.addAll(requestSentiment(component));
           // Mark this entry as analyzed
-          entry.setSentimentAnalyzed(true);
+          component.setSentimentAnalyzed(true);
         } catch (final IOException e) {
           if (e instanceof GoogleJsonResponseException) {
-            entry.setSentimentAnalyzed(true);
+            component.setSentimentAnalyzed(true);
           }
           Log.e(TAG, "failed to analyze sentiment", e);
         }
       }
-      // Notify UI of number of entries analyzed
+      // Notify UI of number of components analyzed
       publishProgress(++analyzedCount);
     }
     if (CollectionUtils.isNotEmpty(entities)) {
@@ -122,9 +126,9 @@ class AnalyzeTask extends AsyncTask<Entry, Integer, Void> {
       sentimentDao.insertAll(sentiments);
     }
 
-    // Save all entries to mark them as analyzed
-    Log.d(TAG, "updating entries");
-    entryDao.update(entries);
+    // Save all components to mark them as analyzed
+    Log.d(TAG, "updating components");
+    entryComponentDao.update(components);
     return null;
   }
 
@@ -135,12 +139,12 @@ class AnalyzeTask extends AsyncTask<Entry, Integer, Void> {
    * @return the named entities from the entry's text
    * @throws IOException querying the GCNLAPI
    */
-  private Collection<NamedEntity> requestNamedEntities(final Entry entry) throws IOException {
+  private Collection<NamedEntity> requestNamedEntities(final EntryComponent entryComponent) throws IOException {
     // Query the API.
     final AnalyzeEntitiesResponse entitiesResponse =
         api.documents().analyzeEntities(new AnalyzeEntitiesRequest()
             .setDocument(new Document()
-                .setContent(entry.getText())
+                .setContent(entryComponent.getValue())
                 .setType("PLAIN_TEXT"))
             .setEncodingType("Utf16")).execute();
     // Convert the results to DiaryNamedEntity objects.
@@ -152,7 +156,8 @@ class AnalyzeTask extends AsyncTask<Entry, Integer, Void> {
       // Iterate over all mentions of this entity in the entry
       for (final EntityMention mention : entity.getMentions()) {
         final NamedEntity namedEntity = new NamedEntity();
-        namedEntity.setEntryId(entry.getId());
+        namedEntity.setEntryId(entryComponent.getEntryId());
+        namedEntity.setEntryComponentId(entryComponent.getId());
         namedEntity.setName(entity.getName());
         namedEntity.setType(entity.getType());
         namedEntity.setSalience(entity.getSalience());
@@ -174,11 +179,11 @@ class AnalyzeTask extends AsyncTask<Entry, Integer, Void> {
 
   @EqualsAndHashCode
   private class NamedEntityKey {
-    Long entryId;
+    Long entryComponentId;
     String name;
     int beginOffset;
     private NamedEntityKey(final NamedEntity entity, final EntityMention mention) {
-      entryId = entity.getEntryId();
+      entryComponentId = entity.getEntryComponentId();
       name = entity.getName();
       beginOffset = mention.getText().getBeginOffset();
     }
@@ -191,24 +196,26 @@ class AnalyzeTask extends AsyncTask<Entry, Integer, Void> {
    * @return the sentiment of the text for the entry
    * @throws IOException querying the GCNLAPI
    */
-  private List<Sentiment> requestSentiment(final Entry entry) throws IOException {
+  private List<Sentiment> requestSentiment(final EntryComponent entryComponent) throws IOException {
     final AnalyzeSentimentResponse sentimentResponse =
         api.documents().analyzeSentiment(new AnalyzeSentimentRequest()
           .setDocument(new Document()
-            .setContent(entry.getText())
+            .setContent(entryComponent.getValue())
             .setType("PLAIN_TEXT"))
           .setEncodingType("Utf16")).execute();
     // Convert the results to Sentiment objects
     final List<Sentiment> results = new ArrayList<>();
     final com.google.api.services.language.v1.model.Sentiment documentSentiment = sentimentResponse.getDocumentSentiment();
     final Sentiment sentiment = new Sentiment();
-    sentiment.setEntryId(entry.getId());
+    sentiment.setEntryId(entryComponent.getEntryId());
+    sentiment.setEntryComponentId(entryComponent.getId());
     sentiment.setScore(documentSentiment.getScore());
     sentiment.setMagnitude(documentSentiment.getMagnitude());
     results.add(sentiment);
     for (final Sentence sentence : sentimentResponse.getSentences()) {
       final Sentiment sentenceSentiment = new Sentiment();
-      sentenceSentiment.setEntryId(entry.getId());
+      sentenceSentiment.setEntryId(entryComponent.getEntryId());
+      sentenceSentiment.setEntryComponentId(entryComponent.getId());
       sentenceSentiment.setScore(sentence.getSentiment().getScore());
       sentenceSentiment.setMagnitude(sentence.getSentiment().getMagnitude());
       final Integer beginOffset = sentence.getText().getBeginOffset();

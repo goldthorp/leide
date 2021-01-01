@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -266,6 +268,8 @@ public class BackupUtil {
         if (value != null) {
           // Deserialize the data to our native Java types
           final List<List<Object>> data = deserialize(value);
+          // Sort by @BackupEntity.index()
+          Collections.sort(data, new BackupEntityListComparator<>());
           // For each type of entity, wipe the current local data for this type and insert the
           // data retrieved from Firebase.
           for (final List<Object> objects : data) {
@@ -295,6 +299,24 @@ public class BackupUtil {
         paused = false;
       }
     });
+  }
+
+  /**
+   * Comparator for sorting List<List<Object>>s where the Objects are @BackupEntities to be sorted
+   * by @BackupEntity.index(). It is assumed that the inner lists will all contain at least one
+   * element and all elements will be the same type of @BackupEntity.
+   */
+  static class BackupEntityListComparator<T extends List<Object>> implements Comparator<T> {
+    @Override
+    public int compare(final List o1, final List o2) {
+      // Find the @BackupEntity annotation for each
+      final BackupEntity class1Annotation =
+        Objects.requireNonNull(o1.get(0).getClass().getAnnotation(BackupEntity.class));
+      final BackupEntity class2Annotation =
+        Objects.requireNonNull(o2.get(0).getClass().getAnnotation(BackupEntity.class));
+      // Sort by index on the annotation
+      return Integer.compare(class1Annotation.index(), class2Annotation.index());
+    }
   }
 
   /**

@@ -1,8 +1,10 @@
 package com.wisebison.leide.model;
 
 import androidx.room.ColumnInfo;
+import androidx.room.Relation;
 
 import java.io.Serializable;
+import java.util.List;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -16,18 +18,12 @@ public class EntryForm implements Serializable {
   @ColumnInfo(name = "id")
   private Long id;
 
-  @ColumnInfo(name = "text")
-  private String text;
-
-  @ColumnInfo(name = "time_zone")
-  private String timeZone;
-
   @ColumnInfo(name = "start_timestamp")
   private Long timestamp;
 
-  @ColumnInfo(name = "location")
-  private String location;
-
   @ColumnInfo(name = "score")
   private Float sentiment;
+
+  @Relation(parentColumn = "id", entityColumn = "entry_fk")
+  private List<EntryComponent> components;
 }

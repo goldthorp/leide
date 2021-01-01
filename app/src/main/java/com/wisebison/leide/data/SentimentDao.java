@@ -43,8 +43,9 @@ public abstract class SentimentDao {
     "AND e.start_timestamp >= :startMillis AND e.start_timestamp < :endMillis")
   abstract Float getMaxScore(long startMillis, long endMillis);
 
-  @Query("SELECT SUBSTR(e.text, s.sentence_begin_offset + 1, s.sentence_length) " +
+  @Query("SELECT SUBSTR(ec.value, s.sentence_begin_offset + 1, s.sentence_length) " +
     "FROM `sentiment` s LEFT JOIN `entry` e ON e.id = s.entry_fk " +
+    "LEFT JOIN `entry_component` ec ON ec.id = s.entry_component_fk " +
     "WHERE s.sentence_begin_offset IS NOT NULL AND e.start_timestamp >= :startMillis " +
     "AND e.start_timestamp < :endMillis AND s.score = :score")
   abstract List<String> getSentencesWithScore(long startMillis, long endMillis, float score);

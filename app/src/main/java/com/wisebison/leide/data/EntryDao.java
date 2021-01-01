@@ -4,9 +4,11 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Transaction;
 import androidx.room.Update;
 
 import com.wisebison.leide.model.Entry;
+import com.wisebison.leide.model.EntryComponent;
 import com.wisebison.leide.model.EntryForm;
 import com.wisebison.leide.util.BackgroundUtil;
 
@@ -14,7 +16,14 @@ import java.util.List;
 
 @Dao
 public abstract class EntryDao {
-  @Query("SELECT e.id, e.text, e.time_zone, e.start_timestamp, e.location, s.score " +
+
+  final EntryComponentDao entryComponentDao;
+  public EntryDao(final AppDatabase db) {
+    entryComponentDao = db.getEntryComponentDao();
+  }
+
+  @Transaction
+  @Query("SELECT e.id, e.start_timestamp, s.score " +
     "FROM `entry` e LEFT JOIN `sentiment` s ON e.id = s.entry_fk " +
     "WHERE s.sentence_begin_offset IS NULL ORDER BY e.start_timestamp DESC")
   public abstract LiveData<List<EntryForm>> getList();
@@ -22,13 +31,10 @@ public abstract class EntryDao {
   @Query("SELECT COUNT(*) FROM `entry`")
   public abstract LiveData<Long> getCount();
 
-  @Query("SELECT location FROM `entry` GROUP BY location ORDER BY MAX(id) DESC LIMIT 5")
-  public abstract LiveData<List<String>> getRecentLocations();
-
   @Query("SELECT * FROM `entry` WHERE id = :entryId")
-  abstract Entry _getById(long entryId);
+  abstract EntryForm _getById(long entryId);
 
-  public BackgroundUtil.Background<Entry> getById(final long entryId) {
+  public BackgroundUtil.Background<EntryForm> getById(final long entryId) {
     return BackgroundUtil.doInBackground(() -> _getById(entryId));
   }
 
@@ -48,16 +54,6 @@ public abstract class EntryDao {
     return BackgroundUtil.doInBackground(() -> _getNext(startTimestamp));
   }
 
-  @Query("SELECT * FROM `entry` WHERE entities_analyzed = 0 OR sentiment_analyzed = 0")
-  public abstract LiveData<List<Entry>> getAllUnanalyzed();
-
-  @Query("SELECT * FROM `entry` WHERE entities_analyzed = 0 OR sentiment_analyzed = 0")
-  abstract List<Entry> _getAllUnanalyzedOnce();
-
-  public BackgroundUtil.Background<List<Entry>> getAllUnanalyzedOnce() {
-      return BackgroundUtil.doInBackground(this::_getAllUnanalyzedOnce);
-  }
-
   @Query("SELECT MIN(start_timestamp) FROM `entry`")
   abstract Long _getEarliestTimestamp();
 
@@ -73,7 +69,15 @@ public abstract class EntryDao {
   }
 
   @Insert
-  public abstract void insert(Entry entry);
+  abstract long _insert(Entry entry);
+
+  public void insert(final Entry entry) {
+    final long id = _insert(entry);
+    for (final EntryComponent component : entry.getComponents()) {
+      component.setEntryId(id);
+      entryComponentDao.insert(component);
+    }
+  }
 
   @Update
   public abstract void update(Entry... entries);

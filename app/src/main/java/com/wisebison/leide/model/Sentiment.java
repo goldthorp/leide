@@ -15,16 +15,22 @@ import lombok.ToString;
 @ToString
 @Entity(tableName = "sentiment",
   foreignKeys = @ForeignKey(
-    entity = Entry.class,
+    entity = EntryComponent.class,
     parentColumns = "id",
-    childColumns = "entry_fk",
+    childColumns = "entry_component_fk",
     onDelete = ForeignKey.CASCADE),
   indices = @Index(
-    name = "sentiment_entry_fk",
-    value = "entry_fk"))
+    name = "sentiment_entry_component_fk",
+    value = "entry_component_fk"))
 public class Sentiment {
   @PrimaryKey
   private Long id;
+
+  @ColumnInfo(name = "entry_fk")
+  private Long entryId;
+
+  @ColumnInfo(name = "entry_component_fk")
+  private Long entryComponentId;
 
   private float score;
 
@@ -35,7 +41,4 @@ public class Sentiment {
 
   @ColumnInfo(name = "sentence_length")
   private Integer sentenceLength;
-
-  @ColumnInfo(name = "entry_fk")
-  private Long entryId;
 }

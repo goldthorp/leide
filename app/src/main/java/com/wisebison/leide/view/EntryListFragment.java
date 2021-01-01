@@ -68,7 +68,7 @@ public class EntryListFragment extends Fragment {
 
 
       // Load all entries and subscribe to changes
-      final EntryDao entryDao = AppDatabase.getInstance(requireContext()).getDiaryEntryDao();
+      final EntryDao entryDao = AppDatabase.getInstance(requireContext()).getEntryDao();
       entryDao.getList().observe(getViewLifecycleOwner(), entryArrayAdapter::update);
 
       final FloatingActionButton fab = root.findViewById(R.id.fab);

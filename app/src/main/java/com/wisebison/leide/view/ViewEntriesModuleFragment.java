@@ -31,7 +31,7 @@ public class ViewEntriesModuleFragment extends ModuleFragment {
     @Nullable final Bundle savedInstanceState) {
     final View rootView = super.onCreateView(inflater, container, savedInstanceState);
     final TextView entryCountTextView = rootView.findViewById(R.id.entry_count_text_view);
-    final EntryDao diaryEntryDao = AppDatabase.getInstance(requireContext()).getDiaryEntryDao();
+    final EntryDao diaryEntryDao = AppDatabase.getInstance(requireContext()).getEntryDao();
     diaryEntryDao.getCount().observe(getViewLifecycleOwner(), count -> {
       entryCountTextView.setText(getString(R.string.entry_count, count));
     });
