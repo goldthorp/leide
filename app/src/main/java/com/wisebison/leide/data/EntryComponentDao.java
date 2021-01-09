@@ -30,8 +30,8 @@ public abstract class EntryComponentDao {
     "sentiment_analyzed = 0)")
   public abstract LiveData<List<EntryComponent>> getAllUnanalyzed();
 
-  @Query("SELECT * FROM entry_component WHERE type = 0 AND entities_analyzed = 0 OR " +
-    "sentiment_analyzed = 0")
+  @Query("SELECT * FROM entry_component WHERE type = 0 AND (entities_analyzed = 0 OR " +
+    "sentiment_analyzed = 0)")
   abstract List<EntryComponent> _getAllUnanalyzedOnce();
 
   public BackgroundUtil.Background<List<EntryComponent>> getAllUnanalyzedOnce() {
