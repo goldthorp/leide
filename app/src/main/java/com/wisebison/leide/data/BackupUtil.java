@@ -95,11 +95,10 @@ public class BackupUtil {
         if (!CollectionUtils.isEmpty(data)) {
           final String nodeName =
             Objects.requireNonNull(data.get(0).getClass().getAnnotation(BackupEntity.class)).name();
-          final DatabaseReference ref = databaseReference.child(nodeName);
-          ref.addListenerForSingleValueEvent(new ValueEventListener() {
+          databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull final DataSnapshot snapshot) {
-              new BackupTask<>(snapshot, ref, data, success -> {
+              new BackupTask<>(snapshot.child(nodeName), databaseReference.child(nodeName), data, success -> {
                 if (!success) {
                   // Remote entries list was not a subset of local entries list. Backup failed.
                   new AlertDialog.Builder(mainActivity)
@@ -205,12 +204,14 @@ public class BackupUtil {
      */
     private boolean processBackup(final List<T> localData, final List<T> remoteData) {
       if (remoteData.size() > localData.size()) {
+        Log.d(TAG, "Remote size " + remoteData.size() + ", local size " + localData.size());
         return false;
       }
       for (int i = 0; i < remoteData.size(); i++) {
         final T local = localData.get(i);
         final T remote = remoteData.get(i);
         if (!local.equals(remote)) {
+          Log.d(TAG, "Local entity " + local + " does not match remote entity " + remote);
           return false;
         }
       }
@@ -272,12 +273,12 @@ public class BackupUtil {
           Collections.sort(data, new BackupEntityListComparator<>());
           // For each type of entity, wipe the current local data for this type and insert the
           // data retrieved from Firebase.
-          for (final List<Object> objects : data) {
-            final String type = objects.get(0).getClass().getSimpleName();
-            final Method deleteMethod = findDaoMethod("_delete" + type);
-            final Method insertMethod = findDaoMethod("_insert" + type);
-            final ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(() -> {
+          final ExecutorService executor = Executors.newSingleThreadExecutor();
+          executor.execute(() -> {
+            for (final List<Object> objects : data) {
+              final String type = objects.get(0).getClass().getSimpleName();
+              final Method deleteMethod = findDaoMethod("_delete" + type);
+              final Method insertMethod = findDaoMethod("_insert" + type);
               try {
                 deleteMethod.invoke(localDb.getBackupEntityGeneratedDao());
                 insertMethod.invoke(localDb.getBackupEntityGeneratedDao(), objects);
@@ -285,8 +286,8 @@ public class BackupUtil {
               } catch (final IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
               }
-            });
-          }
+            }
+          });
         } else {
           paused = false;
           // TODO: handle empty snapshot?

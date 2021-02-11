@@ -1,53 +1,41 @@
 package com.wisebison.leide.view;
 
-import android.content.Context;
-import android.location.Address;
-import android.location.Geocoder;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.EditText;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.android.gms.common.util.CollectionUtils;
-import com.google.android.gms.location.LocationServices;
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.EntryComponentDao;
+import com.wisebison.leide.data.EntryComponentTemplateDao;
 import com.wisebison.leide.data.EntryDao;
 import com.wisebison.leide.model.Entry;
+import com.wisebison.leide.model.EntryComponent;
+import com.wisebison.leide.model.EntryComponentTemplate;
 import com.wisebison.leide.model.EntryComponentType;
 
-import org.apache.commons.lang3.StringUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
+import java.util.ArrayList;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class CreateEntryActivity extends AppCompatActivity {
 
+  private static final String TAG = CreateEntryActivity.class.getSimpleName();
+
   private long startTimestamp;
 
-  /**
-   * Dialog to display on save click for setting location text and selecting timezone.
-   * Location will be autofilled with the device's last location if available.
-   * Timezone will be set to the device's timezone.
-   */
-  private AlertDialog locationDialog;
+  private LinearLayout componentContainer;
+  private EntryComponentTemplateAdapter templateAdapter;
+
+  private ArrayList<EntryComponentTemplate> templates;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -56,7 +44,74 @@ public class CreateEntryActivity extends AppCompatActivity {
 
     startTimestamp = System.currentTimeMillis();
 
-    setUpLocationDialog();
+    final EntryComponentTemplateDao templateDao =
+      AppDatabase.getInstance(this).getEntryComponentTemplateDao();
+
+    componentContainer = findViewById(R.id.component_container_layout);
+
+    final AtomicReference<AlertDialog> templateDialog = new AtomicReference<>();
+
+    final ImageView addComponent = findViewById(R.id.add_component);
+
+    templates = new ArrayList<>();
+
+    templateDao.getAll().observe(this, templates -> {
+      this.templates.addAll(templates);
+      final LinearLayout dialogLayout = new LinearLayout(this);
+      getLayoutInflater().inflate(R.layout.dialog_component_template, dialogLayout);
+      final Spinner templateSpinner = dialogLayout.findViewById(R.id.template_spinner);
+      templateAdapter = new EntryComponentTemplateAdapter(this, this.templates);
+      templateSpinner.setAdapter(templateAdapter);
+      for (final EntryComponentTemplate template : this.templates) {
+        if (template.getType() == EntryComponentType.DATE) {
+          addComponent(template, -1);
+          break;
+        }
+      }
+      templateDialog.set(new AlertDialog.Builder(this)
+        .setTitle("Select a component")
+        .setView(dialogLayout)
+        .setPositiveButton("Submit", ((dialog, which) -> {
+          final int addComponentIndex = componentContainer.indexOfChild(addComponent);
+          final EntryComponentTemplate selectedComponent =
+            (EntryComponentTemplate) templateSpinner.getSelectedItem();
+          addComponent(selectedComponent, addComponentIndex);
+        })).create());
+    });
+
+    addComponent.setOnClickListener(v -> {
+      if (templateDialog.get() != null) {
+        templateDialog.get().show();
+      }
+    });
+
+    final Button saveButton = findViewById(R.id.save_button);
+    saveButton.setOnClickListener(v -> saveEntry());
+  }
+
+  private void addComponent(final EntryComponentTemplate componentTemplate, final int index) {
+    switch (componentTemplate.getType()) {
+      case DATE:
+        componentContainer.addView(new CreateDateComponentView(this), index);
+        break;
+      case LOCATION:
+        componentContainer.addView(new CreateLocationComponentView(this), index);
+        break;
+      case TEXT:
+        componentContainer.addView(new CreateTextComponentView(this), index);
+        break;
+      default:
+        Log.e(TAG, "Unsupported entry component type " + componentTemplate.getType());
+    }
+    if (componentTemplate.getType().isOnlyOnePerEntry()) {
+      for (final EntryComponentTemplate template : templates) {
+        if (template.getType() == componentTemplate.getType()) {
+          templates.remove(template);
+          break;
+        }
+      }
+    }
+    templateAdapter.notifyDataSetChanged();
   }
 
   // Display a confirm dialog before exiting on back-press
@@ -70,124 +125,18 @@ public class CreateEntryActivity extends AppCompatActivity {
         .show();
   }
 
-  private void setUpLocationDialog() {
-    final LayoutInflater inflater = getLayoutInflater();
-    final LinearLayout dialogLayout = new LinearLayout(this);
-    inflater.inflate(R.layout.dialog_location_timezone, dialogLayout);
-
-    // Spinner to select a timezone
-    final Spinner timeZoneSpinner = dialogLayout.findViewById(R.id.timezone_spinner);
-    final ArrayAdapter<String> timeZoneIdAdapter =
-        new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
-            TimeZone.getAvailableIDs());
-    timeZoneIdAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-    timeZoneSpinner.setAdapter(timeZoneIdAdapter);
-
-    // Set selected item in spinner to current timezone
-    for (int i = 0; i < timeZoneIdAdapter.getCount(); i++) {
-      if (TimeZone.getDefault().getID().equals(timeZoneIdAdapter.getItem(i))) {
-        timeZoneSpinner.setSelection(i);
-      }
-    }
-
-    // EditText for location
-    final EditText locationEditText = dialogLayout.findViewById(R.id.location_edit_text);
-
-    // Spinner for choosing address to auto-fill in the EditText
-    final Spinner locationSpinner = dialogLayout.findViewById(R.id.location_spinner);
-    final ArrayAdapter<String> addressAdapter =
-        new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item);
-
-    // Get the device's last known location and reverse geocode the coordinates on a background
-    // thread. Populate the spinner with the addresses for auto-filling the location input.
-    new GetLocationTask(addresses -> {
-      for (final Address address : addresses) {
-        addressAdapter.add(address.getAddressLine(0));
-      }
-      locationSpinner.setAdapter(addressAdapter);
-    }).execute(this);
-
-    // When a spinner item is selected, set the EditText value
-    locationSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-      @Override
-      public void onItemSelected(
-          final AdapterView<?> parent, final View view, final int position, final long id) {
-        locationEditText.setText(addressAdapter.getItem(position));
-      }
-      @Override
-      public void onNothingSelected(final AdapterView<?> parent) {}
-    });
-
-    // Spinner for choosing from recently used locations
-    final Spinner recentLocationsSpinner = dialogLayout.findViewById(R.id.recent_locations_spinner);
-    final ArrayAdapter<String> recentAddressesAdapter =
-        new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item);
-    // Add a placeholder to the recent locations spinner
-    recentAddressesAdapter.add("-");
-
-    // Get recent locations
-    final EntryComponentDao entryComponentDao =
-      AppDatabase.getInstance(this).getEntryComponentDao();
-    entryComponentDao.getRecentLocations().then(locationJsonStrings -> {
-      // Populate spinner with the 5 most recent addresses
-      for (final String locationJsonString : locationJsonStrings) {
-        try {
-          final JSONObject locationJson = new JSONObject(locationJsonString);
-          recentAddressesAdapter.add(locationJson.getString("display"));
-        } catch (final JSONException e) {
-          e.printStackTrace();
-        }
-        recentLocationsSpinner.setAdapter(recentAddressesAdapter);
-      }
-    });
-
-    // When a recent location is selected, set the EditText value
-    recentLocationsSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-      @Override
-      public void onItemSelected(
-          final AdapterView<?> parent, final View view, final int position, final long id) {
-        if (position != 0) {
-          locationEditText.setText(recentAddressesAdapter.getItem(position));
-        }
-      }
-      @Override
-      public void onNothingSelected(final AdapterView<?> parent) {}
-    });
-
-    // Build dialog
-    locationDialog = new AlertDialog.Builder(this)
-        .setTitle(getString(R.string.set_location))
-        .setView(dialogLayout)
-        .setPositiveButton(R.string.save, (dialog, which) -> {
-          try {
-            saveEntry(locationEditText.getText().toString(),
-                (String) timeZoneSpinner.getSelectedItem());
-          } catch (final JSONException e) {
-            e.printStackTrace();
-          }
-        }).create();
-  }
-
-  public void onClickSave(final View view) {
-    locationDialog.show();
-  }
-
-  private void saveEntry(final String location, final String timeZone) throws JSONException {
-    final EditText editText = findViewById(R.id.editText);
+  private void saveEntry() {
     final Entry entry = new Entry();
     entry.setStartTimestamp(startTimestamp);
     entry.setSaveTimestamp(System.currentTimeMillis());
-    final JSONObject dateValue = new JSONObject();
-    dateValue.put("millis", System.currentTimeMillis());
-    dateValue.put("timeZone", timeZone);
-    entry.addComponent(EntryComponentType.DATE, dateValue.toString());
-    if (StringUtils.isNotBlank(location)) {
-      final JSONObject locationValue = new JSONObject();
-      locationValue.put("display", location);
-      entry.addComponent(EntryComponentType.LOCATION, locationValue.toString());
-    }
-    entry.addComponent(EntryComponentType.TEXT, editText.getText().toString());
+    entry.setTimeZone(TimeZone.getDefault().getID());
 
+    for (int i = 0; i < componentContainer.getChildCount(); i++) {
+      final ComponentView componentView = (ComponentView) componentContainer.getChildAt(i);
+      final EntryComponent component = componentView.getComponent();
+      component.setListSeq(i);
+      entry.getComponents().add(component);
+    }
     // Insert on a separate thread because otherwise room throws an error
     final ExecutorService executorService = Executors.newSingleThreadExecutor();
     final EntryDao entryDao = AppDatabase.getInstance(this).getEntryDao();
@@ -197,53 +146,5 @@ public class CreateEntryActivity extends AppCompatActivity {
     } catch (final ExecutionException | InterruptedException e) {
       e.printStackTrace();
     }
-  }
-
-  /**
-   * Task to get the last known location for the device and reverse geocode the coordinates (get
-   * a human-readable address from the latitude/longitude of the device).
-   *
-   * This is used to pre-populate the location EditText in the set location dialog that displays
-   * on save.
-   */
-  private static class GetLocationTask extends AsyncTask<Context, Void, Void> {
-
-    private final GetLocationTaskCallback callback;
-    GetLocationTask(final GetLocationTaskCallback callback) {
-      this.callback = callback;
-    }
-
-    @Override
-    protected Void doInBackground(final Context... contexts) {
-      // TODO request permission
-      LocationServices.getFusedLocationProviderClient(contexts[0]).getLastLocation()
-          .addOnSuccessListener(location -> {
-            if (location != null) {
-              // Device's last location found. Attempt to reverse geocode the coordinates.
-              final Geocoder geocoder = new Geocoder(contexts[0], Locale.getDefault());
-              try {
-                final List<Address> address = geocoder.getFromLocation(location.getLatitude(),
-                    location.getLongitude(), 5);
-                if (!CollectionUtils.isEmpty(address) &&
-                    StringUtils.isNotBlank(address.get(0).getAddressLine(0))) {
-                  callback.resolve(address);
-                } else {
-                  Log.d("DEBUG", "address not found");
-                }
-              } catch (final IOException e) {
-                e.printStackTrace();
-              }
-            } else {
-              Log.d("DEBUG", "location not found");
-            }
-          }).addOnFailureListener(e -> {
-            Log.e("GET_LOCATION_FAILED", e.getMessage(), e);
-          });
-      return null;
-    }
-  }
-
-  private interface GetLocationTaskCallback {
-    void resolve(List<Address> addresses);
   }
 }

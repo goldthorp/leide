@@ -30,15 +30,11 @@ public class Entry implements Comparable<Entry>, Serializable {
   @ColumnInfo(name = "save_timestamp")
   private Long saveTimestamp;
 
+  @ColumnInfo(name = "time_zone")
+  private String timeZone;
+
   @Ignore
   private List<EntryComponent> components = new ArrayList<>();
-
-  public EntryComponent addComponent(final EntryComponentType type, final String value) {
-    final EntryComponent component = new EntryComponent(type);
-    component.setValue(value);
-    getComponents().add(component);
-    return component;
-  }
 
   // Sort by newest to oldest
   @Override

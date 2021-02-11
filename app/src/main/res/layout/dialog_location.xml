@@ -18,9 +18,4 @@
         android:layout_height="wrap_content"
         android:id="@+id/location_edit_text"/>
 
-    <Spinner
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/timezone_spinner"/>
-
 </LinearLayout>

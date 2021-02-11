@@ -1,57 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/view_entry_layout"
     android:visibility="invisible">
 
-    <TextView
-        android:id="@+id/entry_date_text_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@id/entry_location_text_view"
-        app:layout_constraintTop_toTopOf="parent"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:paddingTop="5dp"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        android:text="Thu, Jan 1 1970 12:00 AM"
-        tools:ignore="HardcodedText" />
-
-    <TextView
-        android:id="@+id/entry_location_text_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@+id/entry_text_scroll_view"
-        app:layout_constraintTop_toBottomOf="@id/entry_date_text_view"
-        android:textStyle="bold"
-        android:paddingLeft="12dp"
-        android:paddingRight="12dp"
-        android:text="1600 Pennsylvania Ave NW, Washington, DC 20500"
-        android:visibility="gone"
-        tools:ignore="HardcodedText" />
-
     <ScrollView
         android:id="@+id/entry_text_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/buttons_container"
-        app:layout_constraintTop_toBottomOf="@id/entry_location_text_view">
+        app:layout_constraintTop_toTopOf="parent">
 
         <TextView
-            android:id="@+id/entry_text_text_view"
+            android:id="@+id/entry_text_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="5dp"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
-            android:paddingBottom="16dp"
-            android:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc porttitor risus non diam tempus, non interdum justo porttitor. Etiam accumsan, massa et sollicitudin eleifend, ex massa vehicula nibh, at auctor risus arcu quis lacus. Nunc suscipit viverra cursus. Aenean porttitor velit sed lectus vestibulum, sit amet mattis enim porta. Nulla eleifend suscipit condimentum. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Proin nec fringilla ante, ac imperdiet magna. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Suspendisse scelerisque vehicula nibh ut pretium. Nunc vehicula sed nisl id porta. Ut suscipit vestibulum nisl sit amet aliquet. Nunc ac consequat erat, a tincidunt diam. Nulla auctor eleifend lorem, a maximus ex elementum blandit. In viverra sem nec libero viverra ullamcorper."
-            tools:ignore="HardcodedText" />
+            android:paddingBottom="16dp" />
     </ScrollView>
 
     <androidx.constraintlayout.widget.ConstraintLayout

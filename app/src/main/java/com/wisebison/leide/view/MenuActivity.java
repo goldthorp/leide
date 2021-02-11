@@ -17,12 +17,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.EntryComponentDao;
+import com.wisebison.leide.data.EntryDao;
 import com.wisebison.leide.model.EntryComponent;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -86,6 +85,7 @@ public class MenuActivity extends AppCompatActivity {
 
     final StringBuilder stringBuilder = new StringBuilder();
     final AppDatabase appDatabase = AppDatabase.getInstance(this);
+    final EntryDao entryDao = appDatabase.getEntryDao();
     final EntryComponentDao entryComponentDao = appDatabase.getEntryComponentDao();
     entryComponentDao.getAll().then(components -> {
       if (CollectionUtils.isEmpty(components)) {
@@ -98,28 +98,21 @@ public class MenuActivity extends AppCompatActivity {
           if (component.getEntryId() != firstEntryId && component.getListSeq() == 0) {
             stringBuilder.append("\n");
           }
-          try {
-            switch (component.getType()) {
-              case TEXT:
-                stringBuilder.append(component.getValue());
-                break;
-              case DATE:
-                final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
-                final JSONObject dateJson = new JSONObject(component.getValue());
-                if (dateJson.has("timeZone") &&
-                  StringUtils.isNotBlank(dateJson.getString("timeZone"))) {
-                  sdf.setTimeZone(TimeZone.getTimeZone(dateJson.getString("timeZone")));
-                }
-                stringBuilder.append(sdf.format(new Date(dateJson.getLong("millis"))));
-                break;
-              case LOCATION:
-                final JSONObject locationJson = new JSONObject(component.getValue());
-                stringBuilder.append(locationJson.getString("display"));
-                break;
+          switch (component.getType()) {
+            case TEXT:
+              stringBuilder.append(component.getValues().get(0).getValue());
+              break;
+            case DATE:
+              final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
+              final String timeZone = entryDao.getTimeZone(component.getEntryId());
+              sdf.setTimeZone(TimeZone.getTimeZone(timeZone));
+              stringBuilder.append(sdf.format(
+                new Date(NumberUtils.toLong(component.getValue("millis")))));
+              break;
+            case LOCATION:
+              stringBuilder.append(component.getValue("display"));
+              break;
             }
-          } catch (final JSONException e) {
-            e.printStackTrace();
-          }
           stringBuilder.append("\n");
         }
         fos.write(stringBuilder.toString().getBytes());

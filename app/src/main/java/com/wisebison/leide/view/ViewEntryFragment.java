@@ -16,18 +16,11 @@ import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.EntryDao;
 import com.wisebison.leide.model.Entry;
-import com.wisebison.leide.model.EntryComponent;
 import com.wisebison.leide.model.EntryForm;
-import com.wisebison.leide.util.Utils;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class ViewEntryFragment extends Fragment {
 
-  private TextView dateTextView;
-  private TextView locationTextView;
-  private TextView textTextView;
+  private TextView textView;
   private Button previousButton;
   private Button nextButton;
 
@@ -43,9 +36,7 @@ public class ViewEntryFragment extends Fragment {
     @Nullable final Bundle savedInstanceState) {
     final View root = inflater.inflate(R.layout.fragment_view_entry, container, false);
 
-    dateTextView = root.findViewById(R.id.entry_date_text_view);
-    locationTextView = root.findViewById(R.id.entry_location_text_view);
-    textTextView = root.findViewById(R.id.entry_text_text_view);
+    textView = root.findViewById(R.id.entry_text_view);
     previousButton = root.findViewById(R.id.previous_button);
     nextButton = root.findViewById(R.id.next_button);
 
@@ -56,12 +47,8 @@ public class ViewEntryFragment extends Fragment {
 
     diaryEntryDao = AppDatabase.getInstance(requireContext()).getEntryDao();
     diaryEntryDao.getById(entryId).then(entry -> {
-      try {
-        setEntry(entry);
-        layout.setVisibility(View.VISIBLE);
-      } catch (final JSONException e) {
-        e.printStackTrace();
-      }
+      setEntry(entry);
+      layout.setVisibility(View.VISIBLE);
     });
 
     // FIXME
@@ -74,32 +61,8 @@ public class ViewEntryFragment extends Fragment {
     return root;
   }
 
-  private void setEntry(final EntryForm entry) throws JSONException {
-    //FIXME
-//    dateTextView.setText(Utils.formatDate(entry.getStartTimestamp()));
-//    if (StringUtils.isNotBlank(entry.getLocation())) {
-//      locationTextView.setText(entry.getLocation());
-//      locationTextView.setVisibility(View.VISIBLE);
-//    } else {
-      locationTextView.setVisibility(View.GONE);
-//    }
-//    textTextView.setText(entry.getText());
-    for (final EntryComponent component : entry.getComponents()) {
-      switch (component.getType()) {
-        case DATE:
-          final JSONObject dateValue = new JSONObject(component.getValue());
-          dateTextView.setText(
-            Utils.formatDate(dateValue.getLong("millis"), dateValue.getString("timeZone")));
-          break;
-        case LOCATION:
-          final JSONObject locationValue = new JSONObject(component.getValue());
-          locationTextView.setText(locationValue.getString("display"));
-          locationTextView.setVisibility(View.VISIBLE);
-          break;
-        case TEXT:
-          textTextView.setText(component.getValue());
-      }
-    }
+  private void setEntry(final EntryForm entry) {
+    textView.setText(entry.getEntryForDisplay(getContext(), false));
     // FIXME
 //    // Pre-load the previous and next entries to show if the previous/next entry buttons are
 //    // clicked

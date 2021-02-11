@@ -14,7 +14,7 @@ import com.wisebison.leide.R;
 import com.wisebison.leide.billing.BillingUtil;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.EntryComponentDao;
-import com.wisebison.leide.model.EntryComponent;
+import com.wisebison.leide.model.EntryComponentForm;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -65,7 +65,7 @@ public class AnalyzeFragment extends Fragment {
     entryComponentDao.getAllUnanalyzedOnce().then(this::analyze);
   }
 
-  private void analyze(final List<EntryComponent> entries) {
+  private void analyze(final List<EntryComponentForm> entries) {
     billingUtil.hasPremium(hasPremium -> {
       if (!hasPremium) {
         Log.d(TAG, "user is not subscribed to premium");
@@ -116,7 +116,7 @@ public class AnalyzeFragment extends Fragment {
           final GoogleCredential credential = new GoogleCredential()
             .setAccessToken(token)
             .createScoped(CloudNaturalLanguageScopes.all());
-          new AnalyzeTask(taskCallbacks, db, credential).execute(entries.toArray(new EntryComponent[0]));
+          new AnalyzeTask(taskCallbacks, db, credential).execute(entries.toArray(new EntryComponentForm[0]));
         });
       }
     });

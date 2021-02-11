@@ -3,12 +3,18 @@ package com.wisebison.leide.model;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
 import com.google.firebase.database.Exclude;
 import com.wisebison.annotation.BackupEntity;
+
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -41,8 +47,6 @@ public class EntryComponent implements Comparable<EntryComponent> {
 
   private String name;
 
-  private String value;
-
   @ColumnInfo(name = "list_seq")
   private int listSeq;
 
@@ -54,8 +58,19 @@ public class EntryComponent implements Comparable<EntryComponent> {
   @ColumnInfo(name = "sentiment_analyzed")
   private boolean sentimentAnalyzed;
 
+  @Ignore
+  private List<EntryComponentValue> values = new ArrayList<>();
+
+  public String getValue(final String name) {
+    for (final EntryComponentValue value : values) {
+      if (StringUtils.equals(name, value.getName())) {
+        return value.getValue();
+      }
+    }
+    return null;
+  }
+
   public EntryComponent(final EntryComponentType type) {
-    this.entryId = entryId;
     this.type = type;
   }
 

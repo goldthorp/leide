@@ -18,10 +18,9 @@ import com.google.api.services.language.v1.model.EntityMention;
 import com.google.api.services.language.v1.model.Sentence;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.EntryComponentDao;
-import com.wisebison.leide.data.EntryDao;
 import com.wisebison.leide.data.NamedEntityDao;
 import com.wisebison.leide.data.SentimentDao;
-import com.wisebison.leide.model.EntryComponent;
+import com.wisebison.leide.model.EntryComponentForm;
 import com.wisebison.leide.model.NamedEntity;
 import com.wisebison.leide.model.Sentiment;
 
@@ -31,15 +30,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import lombok.EqualsAndHashCode;
 
 /**
  * Queries the GCNLAPI and saves the results in the database.
  */
-class AnalyzeTask extends AsyncTask<EntryComponent, Integer, Void> {
+class AnalyzeTask extends AsyncTask<EntryComponentForm, Integer, Void> {
 
   private static final String TAG = "AnalyzeTask";
 
@@ -53,8 +54,6 @@ class AnalyzeTask extends AsyncTask<EntryComponent, Integer, Void> {
   /**
    * For marking entries as analyzed.
    */
-  private final EntryDao entryDao;
-
   private final EntryComponentDao entryComponentDao;
 
   /**
@@ -75,7 +74,6 @@ class AnalyzeTask extends AsyncTask<EntryComponent, Integer, Void> {
   AnalyzeTask(final Callbacks callbacks, final AppDatabase db,
               final GoogleCredential credential) {
     this.callbacks = callbacks;
-    entryDao = db.getEntryDao();
     entryComponentDao = db.getEntryComponentDao();
     namedEntityDao = db.getNamedEntityDao();
     sentimentDao = db.getSentimentDao();
@@ -84,21 +82,23 @@ class AnalyzeTask extends AsyncTask<EntryComponent, Integer, Void> {
   }
 
   @Override
-  protected Void doInBackground(final EntryComponent... components) {
+  protected Void doInBackground(final EntryComponentForm... components) {
     // Analyze the specified components, save the results, and mark the components as analyzed.
     int analyzedCount = 0;
     final Collection<NamedEntity> entities = new ArrayList<>();
     final Collection<Sentiment> sentiments = new ArrayList<>();
-    for (final EntryComponent component : components) {
+    final Set<Long> entitiesAnalyzedIds = new HashSet<>();
+    final Set<Long> sentimentAnalyzedIds = new HashSet<>();
+    for (final EntryComponentForm component : components) {
       if (!component.isEntitiesAnalyzed()) {
         try {
             // Perform the query.
           entities.addAll(requestNamedEntities(component));
           // Mark this entry as analyzed.
-          component.setEntitiesAnalyzed(true);
+          entitiesAnalyzedIds.add(component.getId());
         } catch (final IOException e) {
           if (e instanceof GoogleJsonResponseException) {
-            component.setEntitiesAnalyzed(true);
+            entitiesAnalyzedIds.add(component.getId());
           }
           Log.e(TAG, "failed to analyze entities", e);
         }
@@ -108,10 +108,10 @@ class AnalyzeTask extends AsyncTask<EntryComponent, Integer, Void> {
           // Perform the query
           sentiments.addAll(requestSentiment(component));
           // Mark this entry as analyzed
-          component.setSentimentAnalyzed(true);
+          sentimentAnalyzedIds.add(component.getId());
         } catch (final IOException e) {
           if (e instanceof GoogleJsonResponseException) {
-            component.setSentimentAnalyzed(true);
+            sentimentAnalyzedIds.add(component.getId());
           }
           Log.e(TAG, "failed to analyze sentiment", e);
         }
@@ -128,23 +128,24 @@ class AnalyzeTask extends AsyncTask<EntryComponent, Integer, Void> {
 
     // Save all components to mark them as analyzed
     Log.d(TAG, "updating components");
-    entryComponentDao.update(components);
+    entryComponentDao.markAsEntitiesAnalyzed(entitiesAnalyzedIds);
+    entryComponentDao.markAsSentimentAnalyzed(sentimentAnalyzedIds);
     return null;
   }
 
   /**
    * Query the GCNLAPI for named entities and create DiaryNamedEntity objects from the results.
    *
-   * @param entry to analyze the text of
+   * @param entryComponent to analyze the text of
    * @return the named entities from the entry's text
    * @throws IOException querying the GCNLAPI
    */
-  private Collection<NamedEntity> requestNamedEntities(final EntryComponent entryComponent) throws IOException {
+  private Collection<NamedEntity> requestNamedEntities(final EntryComponentForm entryComponent) throws IOException {
     // Query the API.
     final AnalyzeEntitiesResponse entitiesResponse =
         api.documents().analyzeEntities(new AnalyzeEntitiesRequest()
             .setDocument(new Document()
-                .setContent(entryComponent.getValue())
+                .setContent(entryComponent.getValues().get(0).getValue())
                 .setType("PLAIN_TEXT"))
             .setEncodingType("Utf16")).execute();
     // Convert the results to DiaryNamedEntity objects.
@@ -192,15 +193,16 @@ class AnalyzeTask extends AsyncTask<EntryComponent, Integer, Void> {
   /**
    * Query the GCNLAPI for sentiment and create DiarySentiment objects from the results.
    *
-   * @param entry to analyze the text of
+   * @param entryComponent to analyze the text of
    * @return the sentiment of the text for the entry
    * @throws IOException querying the GCNLAPI
    */
-  private List<Sentiment> requestSentiment(final EntryComponent entryComponent) throws IOException {
+  private List<Sentiment> requestSentiment(
+    final EntryComponentForm entryComponent) throws IOException {
     final AnalyzeSentimentResponse sentimentResponse =
         api.documents().analyzeSentiment(new AnalyzeSentimentRequest()
           .setDocument(new Document()
-            .setContent(entryComponent.getValue())
+            .setContent(entryComponent.getValues().get(0).getValue())
             .setType("PLAIN_TEXT"))
           .setEncodingType("Utf16")).execute();
     // Convert the results to Sentiment objects

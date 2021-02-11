@@ -2,11 +2,19 @@ package com.wisebison.leide.model;
 
 import androidx.room.TypeConverter;
 
+import lombok.Getter;
+
 public enum EntryComponentType {
-  TEXT,
-  NUMBER,
-  DATE,
-  LOCATION;
+  TEXT(false),
+  NUMBER(false),
+  DATE(true),
+  LOCATION(true);
+
+  @Getter
+  boolean onlyOnePerEntry;
+  EntryComponentType(final boolean onlyOnePerEntry) {
+    this.onlyOnePerEntry = onlyOnePerEntry;
+  }
 
   @TypeConverter
   public static EntryComponentType toEntryComponentType(final int i) {
