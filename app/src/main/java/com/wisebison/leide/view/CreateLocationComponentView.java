@@ -29,8 +29,6 @@ import com.wisebison.leide.model.EntryComponentType;
 import com.wisebison.leide.model.EntryComponentValue;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.List;
@@ -103,15 +101,10 @@ public class CreateLocationComponentView extends ConstraintLayout implements Com
       AppDatabase.getInstance(getContext()).getEntryComponentDao();
     entryComponentDao.getRecentLocations().then(locationJsonStrings -> {
       // Populate spinner with the 5 most recent addresses
-      for (final String locationJsonString : locationJsonStrings) {
-        try {
-          final JSONObject locationJson = new JSONObject(locationJsonString);
-          recentAddressesAdapter.add(locationJson.getString("display"));
-        } catch (final JSONException e) {
-          e.printStackTrace();
-        }
-        recentLocationsSpinner.setAdapter(recentAddressesAdapter);
+      for (final String location : locationJsonStrings) {
+        recentAddressesAdapter.add(location);
       }
+      recentLocationsSpinner.setAdapter(recentAddressesAdapter);
     });
 
     // When a recent location is selected, set the EditText value
