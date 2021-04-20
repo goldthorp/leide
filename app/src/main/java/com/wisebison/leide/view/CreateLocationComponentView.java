@@ -17,7 +17,6 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.google.android.gms.common.util.CollectionUtils;
 import com.google.android.gms.location.LocationServices;
@@ -34,7 +33,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
-public class CreateLocationComponentView extends ConstraintLayout implements ComponentView {
+public class CreateLocationComponentView extends ComponentView {
 
   private String locationDisplay;
 
@@ -44,7 +43,11 @@ public class CreateLocationComponentView extends ConstraintLayout implements Com
   private AlertDialog editDialog;
 
   public CreateLocationComponentView(final Context context) {
-    super(context);
+    this(context, null);
+  }
+
+  public CreateLocationComponentView(final Context context, final String name) {
+    super(context, name);
 
     inflate(context, R.layout.view_create_location_component, this);
     locationTextView = findViewById(R.id.location_text_view);

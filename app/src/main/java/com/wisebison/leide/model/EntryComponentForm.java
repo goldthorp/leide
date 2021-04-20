@@ -22,6 +22,8 @@ public class EntryComponentForm {
   @TypeConverters(EntryComponentType.class)
   private EntryComponentType type;
 
+  private String name;
+
   @ColumnInfo(name = "entities_analyzed")
   private boolean entitiesAnalyzed;
 

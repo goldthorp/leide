@@ -61,6 +61,7 @@ public class EntryComponent implements Comparable<EntryComponent> {
   @Ignore
   private List<EntryComponentValue> values = new ArrayList<>();
 
+  // TODO: remove
   public String getValue(final String name) {
     for (final EntryComponentValue value : values) {
       if (StringUtils.equals(name, value.getName())) {
@@ -72,6 +73,10 @@ public class EntryComponent implements Comparable<EntryComponent> {
 
   public EntryComponent(final EntryComponentType type) {
     this.type = type;
+  }
+
+  public EntryComponent(final String name) {
+    this.name = name;
   }
 
   @Override

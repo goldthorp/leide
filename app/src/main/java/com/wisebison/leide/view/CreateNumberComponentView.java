@@ -1,0 +1,116 @@
+package com.wisebison.leide.view;
+
+import android.content.Context;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.EditText;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+
+import com.wisebison.leide.R;
+import com.wisebison.leide.model.EntryComponent;
+import com.wisebison.leide.model.EntryComponentType;
+import com.wisebison.leide.model.EntryComponentValue;
+
+import org.apache.commons.lang3.StringUtils;
+
+public class CreateNumberComponentView extends ComponentView {
+
+  private final EditText numberEditText;
+  private final TextView validationTextView;
+
+  private final String minimum;
+  private final String maximum;
+
+  public CreateNumberComponentView(@NonNull final Context context) {
+    this(context, null, null, null);
+  }
+
+  public CreateNumberComponentView(@NonNull final Context context, final String name,
+                                   final String minimum, final String maximum) {
+    super(context, name);
+    setValid(false);
+    this.minimum = minimum;
+    this.maximum = maximum;
+    if (getNameTextView() != null) {
+      if (StringUtils.isNotBlank(minimum) && StringUtils.isNotBlank(maximum)) {
+        getNameTextView().setText(
+          getResources().getString(R.string.name_min_max_label, name, minimum, maximum));
+      } else if (StringUtils.isNotBlank(minimum)) {
+        getNameTextView().setText(
+          getResources().getString(R.string.name_min_label, name, minimum));
+      } else if (StringUtils.isNotBlank(maximum)) {
+        getNameTextView().setText(
+          getResources().getString(R.string.name_max_label, name, maximum));
+      }
+    }
+    inflate(context, R.layout.view_create_number_component, this);
+    numberEditText = findViewById(R.id.number_edit_text);
+
+    validationTextView = findViewById(R.id.number_component_validation_message_text_view);
+    if (StringUtils.isNotBlank(minimum) || StringUtils.isNotBlank(maximum)) {
+      numberEditText.addTextChangedListener(new TextWatcher() {
+        @Override
+        public void beforeTextChanged(
+          final CharSequence s, final int start, final int count, final int after) {}
+
+        @Override
+        public void onTextChanged(
+          final CharSequence s, final int start, final int before, final int count) {}
+
+        @Override
+        public void afterTextChanged(final Editable s) {
+          handleValidation(s.toString());
+        }
+      });
+    }
+  }
+
+  private void handleValidation(final String valueStr) {
+    if (StringUtils.isNotBlank(valueStr)) {
+      final int value = Integer.parseInt(valueStr);
+      if (StringUtils.isNotBlank(minimum)) {
+        if (value < Integer.parseInt(minimum)) {
+          validationTextView.setText(
+            getContext().getString(R.string.number_component_value_minimum_validation, minimum));
+          validationTextView.setVisibility(VISIBLE);
+          setValid(false);
+        } else {
+          validationTextView.setVisibility(GONE);
+          setValid(true);
+        }
+      }
+      if (validationTextView.getVisibility() != VISIBLE && StringUtils.isNotBlank(maximum)) {
+        if (value > Integer.parseInt(maximum)) {
+          validationTextView.setText(
+            getContext().getString(R.string.number_component_value_maximum_validation, maximum));
+          validationTextView.setVisibility(VISIBLE);
+          setValid(false);
+        } else {
+          validationTextView.setVisibility(GONE);
+          setValid(true);
+        }
+      }
+    } else {
+      validationTextView.setText(getContext().getString(R.string.validation_required));
+      validationTextView.setVisibility(VISIBLE);
+      setValid(false);
+    }
+  }
+
+  @Override
+  EntryComponent getComponent() {
+    final EntryComponent component = new EntryComponent(EntryComponentType.NUMBER);
+    if (getNameTextView() != null && StringUtils.isNotBlank(getNameTextView().getText())) {
+      component.setName(getNameTextView().getText().toString());
+    }
+    component.getValues().add(new EntryComponentValue(numberEditText.getText().toString()));
+    return component;
+  }
+
+  @Override
+  void showValidationMessage() {
+    handleValidation(numberEditText.getText().toString());
+  }
+}

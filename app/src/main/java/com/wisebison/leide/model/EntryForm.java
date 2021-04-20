@@ -13,6 +13,7 @@ import androidx.room.Relation;
 import com.wisebison.leide.R;
 import com.wisebison.leide.util.Utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.io.Serializable;
@@ -56,6 +57,12 @@ public class EntryForm implements Serializable {
     for (final EntryComponentForm component : getComponents()) {
       switch (component.getType()) {
         case TEXT:
+        case NUMBER:
+          if (StringUtils.isNotBlank(component.getName())) {
+            spans.add(getSpanHolder(stringBuilder, component.getName(),
+              new StyleSpan(Typeface.BOLD)));
+            stringBuilder.append(component.getName()).append(" ");
+          }
           stringBuilder.append(component.getValues().get(0).getValue());
           stringBuilder.append("\n");
           break;

@@ -7,7 +7,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.wisebison.leide.R;
 import com.wisebison.leide.model.EntryComponent;
@@ -17,14 +16,18 @@ import com.wisebison.leide.util.Utils;
 
 import java.util.Calendar;
 
-public class CreateDateComponentView extends ConstraintLayout implements ComponentView {
+public class CreateDateComponentView extends ComponentView{
 
   private long dateMillis;
 
   private final TextView dateTextView;
 
   public CreateDateComponentView(@NonNull final Context context) {
-    super(context);
+    this(context, null);
+  }
+
+  public CreateDateComponentView(@NonNull final Context context, final String name) {
+    super(context, name);
 
     inflate(context, R.layout.view_create_date_component, this);
     dateTextView = findViewById(R.id.date_text_view);

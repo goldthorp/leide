@@ -80,6 +80,7 @@ public class MenuActivity extends AppCompatActivity {
     }
   }
 
+  // FIXME:
   private void writeEntryTextToFile(final ParcelFileDescriptor pfd) {
     final FileOutputStream fos = new FileOutputStream(pfd.getFileDescriptor());
 

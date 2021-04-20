@@ -2,9 +2,15 @@ package com.wisebison.leide.view;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.Spinner;
 
 import androidx.appcompat.app.AlertDialog;
@@ -16,15 +22,24 @@ import com.wisebison.leide.data.EntryComponentTemplateDao;
 import com.wisebison.leide.data.EntryDao;
 import com.wisebison.leide.model.Entry;
 import com.wisebison.leide.model.EntryComponent;
+import com.wisebison.leide.model.EntryComponentSetting;
 import com.wisebison.leide.model.EntryComponentTemplate;
+import com.wisebison.leide.model.EntryComponentTemplateForm;
 import com.wisebison.leide.model.EntryComponentType;
+import com.wisebison.leide.util.ArrayAdapterItem;
+import com.wisebison.leide.util.BackgroundUtil;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class CreateEntryActivity extends AppCompatActivity {
 
@@ -35,7 +50,7 @@ public class CreateEntryActivity extends AppCompatActivity {
   private LinearLayout componentContainer;
   private EntryComponentTemplateAdapter templateAdapter;
 
-  private ArrayList<EntryComponentTemplate> templates;
+  private ArrayList<EntryComponentTemplateForm> templates;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -49,63 +64,230 @@ public class CreateEntryActivity extends AppCompatActivity {
 
     componentContainer = findViewById(R.id.component_container_layout);
 
-    final AtomicReference<AlertDialog> templateDialog = new AtomicReference<>();
+    final AlertDialog templateDialog = new AlertDialog.Builder(this)
+      .setTitle(R.string.select_component)
+      .create();
+
+    final AlertDialog newComponentDialog = new AlertDialog.Builder(this)
+      .setTitle(getString(R.string.create_new_component))
+      .setPositiveButton(R.string.submit, (dialog, which) -> {
+        final AlertDialog alertDialog = (AlertDialog) dialog;
+        final Spinner componentValueTypeSpinner =
+          Objects.requireNonNull(alertDialog.findViewById(R.id.component_value_type_spinner));
+        @SuppressWarnings("rawtypes") final EntryComponentType type = (EntryComponentType)
+            ((ArrayAdapterItem) componentValueTypeSpinner.getSelectedItem()).getId();
+        final EditText nameEditText =
+          Objects.requireNonNull(alertDialog.findViewById(R.id.new_component_name_edit_text));
+        final CheckBox futureReuseCheckbox =
+          Objects.requireNonNull(alertDialog.findViewById(R.id.future_reuse_checkbox));
+        final CheckBox displayNameInEntryCheckbox =
+          Objects.requireNonNull(alertDialog.findViewById(R.id.display_name_in_entry_checkbox));
+        final Map<String, String> settings = new HashMap<>();
+        settings.put("displayNameInEntry",
+          Boolean.toString(!futureReuseCheckbox.isChecked() || displayNameInEntryCheckbox.isChecked()));
+        if (type == EntryComponentType.NUMBER) {
+          final EditText minimumEditText = Objects.requireNonNull(
+            alertDialog.findViewById(R.id.number_component_minimum_edit_text));
+          final EditText maximumEditText = Objects.requireNonNull(
+            alertDialog.findViewById(R.id.number_component_maximum_edit_text));
+          if (StringUtils.isNotBlank(minimumEditText.getText())) {
+            settings.put("minimum", minimumEditText.getText().toString());
+          }
+          if (StringUtils.isNotBlank(maximumEditText.getText())) {
+            settings.put("maximum", maximumEditText.getText().toString());
+          }
+        }
+        addComponent(type, nameEditText.getText().toString(), settings,  -1);
+        if (futureReuseCheckbox.isChecked()) {
+          final EntryComponentTemplate template = new EntryComponentTemplate();
+          template.setType(type);
+          template.setName(nameEditText.getText().toString());
+          template.getSettings().add(new EntryComponentSetting("displayNameInEntry",
+              String.valueOf(displayNameInEntryCheckbox.isChecked())));
+          if (type == EntryComponentType.NUMBER) {
+            final EditText minimumEditText = Objects.requireNonNull(
+              alertDialog.findViewById(R.id.number_component_minimum_edit_text));
+            final EditText maximumEditText = Objects.requireNonNull(
+              alertDialog.findViewById(R.id.number_component_maximum_edit_text));
+            if (StringUtils.isNotBlank(minimumEditText.getText())) {
+              template.getSettings().add(new EntryComponentSetting("minimum",
+                minimumEditText.getText().toString()));
+            }
+            if (StringUtils.isNotBlank(maximumEditText.getText())) {
+              template.getSettings().add(new EntryComponentSetting("maximum",
+                maximumEditText.getText().toString()));
+            }
+          }
+          BackgroundUtil.doInBackgroundNow(() -> templateDao.insert(template));
+        }
+      })
+      .create();
 
     final ImageView addComponent = findViewById(R.id.add_component);
 
     templates = new ArrayList<>();
 
     templateDao.getAll().observe(this, templates -> {
+      this.templates.clear();
       this.templates.addAll(templates);
+
       final LinearLayout dialogLayout = new LinearLayout(this);
       getLayoutInflater().inflate(R.layout.dialog_component_template, dialogLayout);
-      final Spinner templateSpinner = dialogLayout.findViewById(R.id.template_spinner);
+      final ListView templateListView = dialogLayout.findViewById(R.id.template_list_view);
       templateAdapter = new EntryComponentTemplateAdapter(this, this.templates);
-      templateSpinner.setAdapter(templateAdapter);
-      for (final EntryComponentTemplate template : this.templates) {
+      templateListView.setAdapter(templateAdapter);
+
+      templateListView.setOnItemClickListener((parent, view, position, id) -> {
+        final int addComponentIndex = componentContainer.indexOfChild(addComponent);
+        final EntryComponentTemplateForm selectedComponent = templateAdapter.getItem(position);
+        addComponent(selectedComponent.getType(), selectedComponent.getName(),
+          selectedComponent.getSettingsAsMap(), addComponentIndex);
+        templateDialog.dismiss();
+      });
+
+      templateDialog.setView(dialogLayout);
+      for (final EntryComponentTemplateForm template : this.templates) {
         if (template.getType() == EntryComponentType.DATE) {
-          addComponent(template, -1);
+          addComponent(template.getType(), template.getName(), template.getSettingsAsMap(), -1);
           break;
         }
       }
-      templateDialog.set(new AlertDialog.Builder(this)
-        .setTitle("Select a component")
-        .setView(dialogLayout)
-        .setPositiveButton("Submit", ((dialog, which) -> {
-          final int addComponentIndex = componentContainer.indexOfChild(addComponent);
-          final EntryComponentTemplate selectedComponent =
-            (EntryComponentTemplate) templateSpinner.getSelectedItem();
-          addComponent(selectedComponent, addComponentIndex);
-        })).create());
+
+      final LinearLayout newComponentOption = dialogLayout.findViewById(R.id.new_component_option);
+      final LinearLayout newComponentDialogLayout = new LinearLayout(this);
+      getLayoutInflater().inflate(R.layout.dialog_create_new_component, newComponentDialogLayout);
+      newComponentOption.setOnClickListener(v -> {
+        newComponentDialog.show();
+        templateDialog.dismiss();
+
+        final Spinner componentValueTypeSpinner =
+          newComponentDialogLayout.findViewById(R.id.component_value_type_spinner);
+        final ArrayAdapter<ArrayAdapterItem<EntryComponentType>> componentValueTypeAdapter =
+          new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
+            Arrays.asList(
+              new ArrayAdapterItem<>(EntryComponentType.TEXT, getString(R.string.text)),
+              new ArrayAdapterItem<>(EntryComponentType.NUMBER, getString(R.string.number)),
+              new ArrayAdapterItem<>(null, getString(R.string.no_value))));
+        componentValueTypeSpinner.setAdapter(componentValueTypeAdapter);
+
+        componentValueTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+          @Override
+          public void onItemSelected(
+            final AdapterView<?> parent, final View view, final int position, final long id) {
+            setNewComponentDialogState(newComponentDialogLayout);
+          }
+
+          @Override
+          public void onNothingSelected(final AdapterView<?> parent) { }
+        });
+
+        final CheckBox futureReuseCheckbox =
+          newComponentDialogLayout.findViewById(R.id.future_reuse_checkbox);
+        futureReuseCheckbox.setOnClickListener(cb -> {
+          setNewComponentDialogState(newComponentDialogLayout);
+        });
+      });
+      newComponentDialog.setView(newComponentDialogLayout);
     });
 
     addComponent.setOnClickListener(v -> {
-      if (templateDialog.get() != null) {
-        templateDialog.get().show();
-      }
+      templateDialog.show();
     });
 
     final Button saveButton = findViewById(R.id.save_button);
     saveButton.setOnClickListener(v -> saveEntry());
   }
 
-  private void addComponent(final EntryComponentTemplate componentTemplate, final int index) {
-    switch (componentTemplate.getType()) {
+  private void setNewComponentDialogState(
+    final LinearLayout newComponentDialogLayout) {
+    final EditText nameEditText =
+      newComponentDialogLayout.findViewById(R.id.new_component_name_edit_text);
+
+    final LinearLayout displayNameInEntryLayout =
+      newComponentDialogLayout.findViewById(R.id.display_name_in_entry_layout);
+
+    final CheckBox displayNameInEntryCheckbox =
+      newComponentDialogLayout.findViewById(R.id.display_name_in_entry_checkbox);
+
+    final CheckBox futureReuseCheckbox =
+      newComponentDialogLayout.findViewById(R.id.future_reuse_checkbox);
+
+    final Spinner componentValueTypeSpinner =
+      newComponentDialogLayout.findViewById(R.id.component_value_type_spinner);
+
+    @SuppressWarnings("rawtypes") final boolean noValue =
+      ((ArrayAdapterItem) componentValueTypeSpinner.getSelectedItem()).getId() == null;
+    final boolean nameRequired = futureReuseCheckbox.isChecked() || noValue;
+    if (nameRequired) {
+      nameEditText.setHint(R.string.name_required);
+      displayNameInEntryLayout.setVisibility(View.VISIBLE);
+    } else {
+      nameEditText.setHint(R.string.name_optional);
+      displayNameInEntryLayout.setVisibility(View.GONE);
+    }
+    if (noValue) {
+      displayNameInEntryCheckbox.setEnabled(false);
+      displayNameInEntryCheckbox.setChecked(true);
+    } else {
+      displayNameInEntryCheckbox.setEnabled(true);
+    }
+
+    //noinspection rawtypes
+    if (((ArrayAdapterItem) componentValueTypeSpinner.getSelectedItem()).getId() ==
+      EntryComponentType.NUMBER) {
+      newComponentDialogLayout.findViewById(R.id.number_component_min_max_layout)
+        .setVisibility(View.VISIBLE);
+    } else {
+      newComponentDialogLayout.findViewById(R.id.number_component_min_max_layout)
+        .setVisibility(View.GONE);
+    }
+  }
+
+  private void addComponent(
+    final EntryComponentType componentType, final String componentName,
+    final Map<String, String> settings, final int index) {
+    final String name =
+      Boolean.parseBoolean(settings.get("displayNameInEntry")) ? componentName : null;
+    if (componentType == null) {
+      if (StringUtils.isBlank(name)) {
+        throw new IllegalArgumentException("Name must be specified for components with no type");
+      }
+      componentContainer.addView(new ComponentView(this, name) {
+        @Override
+        EntryComponent getComponent() {
+          return new EntryComponent(name);
+        }
+      }, index);
+      return;
+    }
+    if (componentType.isOnlyOnePerEntry()) {
+      for (int i = 0; i < componentContainer.getChildCount(); i++) {
+        final ComponentView componentView = (ComponentView) componentContainer.getChildAt(i);
+        if (componentView.getComponent().getType() == componentType) {
+          return;
+        }
+      }
+    }
+    switch (componentType) {
       case DATE:
-        componentContainer.addView(new CreateDateComponentView(this), index);
+        componentContainer.addView(new CreateDateComponentView(this, name), index);
         break;
       case LOCATION:
-        componentContainer.addView(new CreateLocationComponentView(this), index);
+        componentContainer.addView(new CreateLocationComponentView(this, name), index);
         break;
       case TEXT:
-        componentContainer.addView(new CreateTextComponentView(this), index);
+        componentContainer.addView(new CreateTextComponentView(this, name), index);
+        break;
+      case NUMBER:
+        componentContainer.addView(new CreateNumberComponentView(this, name,
+          settings.get("minimum"), settings.get("maximum")), index);
         break;
       default:
-        Log.e(TAG, "Unsupported entry component type " + componentTemplate.getType());
+        Log.e(TAG, "Unsupported entry component type " + componentType);
     }
-    if (componentTemplate.getType().isOnlyOnePerEntry()) {
-      for (final EntryComponentTemplate template : templates) {
-        if (template.getType() == componentTemplate.getType()) {
+    if (componentType.isOnlyOnePerEntry()) {
+      for (final EntryComponentTemplateForm template : templates) {
+        if (template.getType() == componentType) {
           templates.remove(template);
           break;
         }
@@ -125,7 +307,22 @@ public class CreateEntryActivity extends AppCompatActivity {
         .show();
   }
 
+  private boolean formIsValid() {
+    boolean valid = true;
+    for (int i = 0; i < componentContainer.getChildCount(); i++) {
+      final ComponentView componentView = (ComponentView) componentContainer.getChildAt(i);
+      if (!componentView.isValid()) {
+        valid = false;
+        componentView.showValidationMessage();
+      }
+    }
+    return valid;
+  }
+
   private void saveEntry() {
+    if (!formIsValid()) {
+      return;
+    }
     final Entry entry = new Entry();
     entry.setStartTimestamp(startTimestamp);
     entry.setSaveTimestamp(System.currentTimeMillis());

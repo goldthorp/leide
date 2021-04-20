@@ -11,15 +11,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.wisebison.leide.R;
-import com.wisebison.leide.model.EntryComponentTemplate;
+import com.wisebison.leide.model.EntryComponentTemplateForm;
 
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class EntryComponentTemplateAdapter extends ArrayAdapter<EntryComponentTemplate> {
+public class EntryComponentTemplateAdapter extends ArrayAdapter<EntryComponentTemplateForm> {
 
   public EntryComponentTemplateAdapter(
-    @NonNull final Context context, @NonNull final ArrayList<EntryComponentTemplate> templates) {
+    @NonNull final Context context,
+    @NonNull final ArrayList<EntryComponentTemplateForm> templates) {
     super(context, R.layout.row_entry_component_template, templates);
   }
 
@@ -32,7 +33,7 @@ public class EntryComponentTemplateAdapter extends ArrayAdapter<EntryComponentTe
   @Override
   public View getView(
     final int position, @Nullable final View convertView, @NonNull final ViewGroup parent) {
-    final EntryComponentTemplate template = Objects.requireNonNull(getItem(position));
+    final EntryComponentTemplateForm template = Objects.requireNonNull(getItem(position));
     final View customView;
     final ViewHolder viewHolder;
     if (convertView == null) {

@@ -18,11 +18,17 @@ public enum EntryComponentType {
 
   @TypeConverter
   public static EntryComponentType toEntryComponentType(final int i) {
+    if (i == -1) {
+      return null;
+    }
     return EntryComponentType.values()[i];
   }
 
   @TypeConverter
-  public static int toInt(final EntryComponentType entryComponentType) {
+  public static Integer toInt(final EntryComponentType entryComponentType) {
+    if (entryComponentType == null) {
+      return -1;
+    }
     return entryComponentType.ordinal();
   }
 }

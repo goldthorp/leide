@@ -10,6 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import com.wisebison.leide.model.Entry;
 import com.wisebison.leide.model.EntryComponent;
+import com.wisebison.leide.model.EntryComponentSetting;
 import com.wisebison.leide.model.EntryComponentTemplate;
 import com.wisebison.leide.model.EntryComponentValue;
 import com.wisebison.leide.model.Module;
@@ -17,8 +18,8 @@ import com.wisebison.leide.model.NamedEntity;
 import com.wisebison.leide.model.Sentiment;
 
 @Database(entities = {Entry.class, EntryComponent.class, EntryComponentValue.class,
-  EntryComponentTemplate.class, NamedEntity.class, Sentiment.class, Module.class}, version = 1,
-  exportSchema = false)
+  EntryComponentTemplate.class, EntryComponentSetting.class, NamedEntity.class,
+  Sentiment.class, Module.class}, version = 1, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
   private static AppDatabase INSTANCE;
@@ -26,9 +27,11 @@ public abstract class AppDatabase extends RoomDatabase {
   public abstract EntryDao getEntryDao();
   public abstract EntryComponentDao getEntryComponentDao();
   public abstract EntryComponentValueDao getEntryComponentValueDao();
+  public abstract EntryComponentTemplateDao getEntryComponentTemplateDao();
+  public abstract EntryComponentTemplateSettingDao getEntryComponentTemplateSettingDao();
+
   public abstract NamedEntityDao getNamedEntityDao();
   public abstract SentimentDao getSentimentDao();
-  public abstract EntryComponentTemplateDao getEntryComponentTemplateDao();
 
   public abstract ModuleDao getModuleDao();
 
@@ -42,12 +45,9 @@ public abstract class AppDatabase extends RoomDatabase {
           @Override
           public void onCreate(@NonNull final SupportSQLiteDatabase db) {
             super.onCreate(db);
-            db.execSQL("INSERT INTO entry_component_template (name, type, settings) " +
-              "VALUES ('Date', 2, '{\"showName\": false}')");
-            db.execSQL("INSERT INTO entry_component_template (name, type, settings) " +
-              "VALUES ('Location', 3, '{\"showName\": false}')");
-            db.execSQL("INSERT INTO entry_component_template (name, type, settings) " +
-              "VALUES ('Text', 0, '{\"showName\": false}')");
+            db.execSQL("INSERT INTO entry_component_template (name, type) VALUES ('Date', 2)");
+            db.execSQL("INSERT INTO entry_component_template (name, type) VALUES ('Location', 3)");
+            db.execSQL("INSERT INTO entry_component_template (name, type) VALUES ('Text', 0)");
           }
         })
         .build();

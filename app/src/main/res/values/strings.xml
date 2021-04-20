@@ -34,4 +34,22 @@
     <string name="new_entry">New entry</string>
     <string name="module_type_VIEW_ENTRIES">View entries</string>
     <string name="sentiment_label">Sentiment: %s</string>
+    <string name="create_new_component">Create new component</string>
+    <string name="name_optional">Name (optional)</string>
+    <string name="name_required">Name (required)</string>
+    <string name="text">Text</string>
+    <string name="number">Number</string>
+    <string name="no_value">No value</string>
+    <string name="save_for_future_reuse">Save for future reuse</string>
+    <string name="select_component">Select a component</string>
+    <string name="submit">Submit</string>
+    <string name="display_name_in_entry">Display name in entry</string>
+    <string name="name_min_label">%s (min: %s)</string>
+    <string name="name_max_label">%s (max: %s)</string>
+    <string name="name_min_max_label">%s (min: %s, max: %s)</string>
+    <string name="number_component_value_minimum_validation">Value must be greater than or equal
+        to %s.</string>
+    <string name="number_component_value_maximum_validation">Value must be less than or equal
+        to %s.</string>
+    <string name="validation_required">Please enter a value.</string>
 </resources>
