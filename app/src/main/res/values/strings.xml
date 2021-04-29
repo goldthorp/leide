@@ -52,4 +52,5 @@
     <string name="number_component_value_maximum_validation">Value must be less than or equal
         to %s.</string>
     <string name="validation_required">Please enter a value.</string>
+    <string name="validation_number_required">Please enter a number.</string>
 </resources>

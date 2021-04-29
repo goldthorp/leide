@@ -55,33 +55,40 @@ public class EntryForm implements Serializable {
     final StringBuilder stringBuilder = new StringBuilder();
     final List<SpanHolder> spans = new ArrayList<>();
     for (final EntryComponentForm component : getComponents()) {
-      switch (component.getType()) {
-        case TEXT:
-        case NUMBER:
-          if (StringUtils.isNotBlank(component.getName())) {
-            spans.add(getSpanHolder(stringBuilder, component.getName(),
-              new StyleSpan(Typeface.BOLD)));
-            stringBuilder.append(component.getName()).append(" ");
-          }
-          stringBuilder.append(component.getValues().get(0).getValue());
-          stringBuilder.append("\n");
-          break;
-        case DATE:
-          final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
-          sdf.setTimeZone(TimeZone.getTimeZone(timeZone));
-          final String formattedDate = sdf.format(NumberUtils.toLong(component.getValue("millis")));
-          spans.add(getSpanHolder(stringBuilder, formattedDate,
-            new StyleSpan(Typeface.BOLD), new RelativeSizeSpan(1.3f)));
-          stringBuilder.append(formattedDate);
-          stringBuilder.append("\n");
-          break;
-        case LOCATION:
-          final String locationDisplay = component.getValue("display");
-          spans.add(getSpanHolder(stringBuilder, locationDisplay,
-            new StyleSpan(Typeface.BOLD), new RelativeSizeSpan(1.1f)));
-          stringBuilder.append(locationDisplay);
-          stringBuilder.append("\n");
-          break;
+      if (component.getType() == null) {
+        spans.add(getSpanHolder(stringBuilder, component.getName(),
+          new StyleSpan(Typeface.BOLD)));
+        stringBuilder.append(component.getName()).append(" ");
+        stringBuilder.append("\n");
+      } else {
+        switch (component.getType()) {
+          case TEXT:
+          case NUMBER:
+            if (StringUtils.isNotBlank(component.getName())) {
+              spans.add(getSpanHolder(stringBuilder, component.getName(),
+                new StyleSpan(Typeface.BOLD)));
+              stringBuilder.append(component.getName()).append(" ");
+            }
+            stringBuilder.append(component.getValues().get(0).getValue());
+            stringBuilder.append("\n");
+            break;
+          case DATE:
+            final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
+            sdf.setTimeZone(TimeZone.getTimeZone(timeZone));
+            final String formattedDate = sdf.format(NumberUtils.toLong(component.getValue("millis")));
+            spans.add(getSpanHolder(stringBuilder, formattedDate,
+              new StyleSpan(Typeface.BOLD), new RelativeSizeSpan(1.3f)));
+            stringBuilder.append(formattedDate);
+            stringBuilder.append("\n");
+            break;
+          case LOCATION:
+            final String locationDisplay = component.getValue("display");
+            spans.add(getSpanHolder(stringBuilder, locationDisplay,
+              new StyleSpan(Typeface.BOLD), new RelativeSizeSpan(1.1f)));
+            stringBuilder.append(locationDisplay);
+            stringBuilder.append("\n");
+            break;
+        }
       }
     }
 

@@ -15,6 +15,10 @@ import com.wisebison.leide.model.EntryComponentValue;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
+
 public class CreateNumberComponentView extends ComponentView {
 
   private final EditText numberEditText;
@@ -68,32 +72,42 @@ public class CreateNumberComponentView extends ComponentView {
   }
 
   private void handleValidation(final String valueStr) {
-    if (StringUtils.isNotBlank(valueStr)) {
-      final int value = Integer.parseInt(valueStr);
-      if (StringUtils.isNotBlank(minimum)) {
-        if (value < Integer.parseInt(minimum)) {
-          validationTextView.setText(
-            getContext().getString(R.string.number_component_value_minimum_validation, minimum));
-          validationTextView.setVisibility(VISIBLE);
-          setValid(false);
-        } else {
-          validationTextView.setVisibility(GONE);
-          setValid(true);
+    try {
+      if (StringUtils.isNotBlank(valueStr) &&
+        (StringUtils.isNotBlank(minimum) || StringUtils.isNotBlank(maximum))) {
+        final float value = Float.parseFloat(valueStr);
+        if (StringUtils.isNotBlank(minimum)) {
+          if (value < Integer.parseInt(minimum)) {
+            validationTextView.setText(
+              getContext().getString(R.string.number_component_value_minimum_validation, minimum));
+            validationTextView.setVisibility(VISIBLE);
+            setValid(false);
+          } else {
+            validationTextView.setVisibility(GONE);
+            setValid(true);
+          }
         }
-      }
-      if (validationTextView.getVisibility() != VISIBLE && StringUtils.isNotBlank(maximum)) {
-        if (value > Integer.parseInt(maximum)) {
-          validationTextView.setText(
-            getContext().getString(R.string.number_component_value_maximum_validation, maximum));
-          validationTextView.setVisibility(VISIBLE);
-          setValid(false);
-        } else {
-          validationTextView.setVisibility(GONE);
-          setValid(true);
+        if (validationTextView.getVisibility() != VISIBLE && StringUtils.isNotBlank(maximum)) {
+          if (value > Integer.parseInt(maximum)) {
+            validationTextView.setText(
+              getContext().getString(R.string.number_component_value_maximum_validation, maximum));
+            validationTextView.setVisibility(VISIBLE);
+            setValid(false);
+          } else {
+            validationTextView.setVisibility(GONE);
+            setValid(true);
+          }
         }
+      } else if (StringUtils.isBlank(valueStr)) {
+        validationTextView.setText(getContext().getString(R.string.validation_required));
+        validationTextView.setVisibility(VISIBLE);
+        setValid(false);
+      } else {
+        validationTextView.setVisibility(GONE);
+        setValid(true);
       }
-    } else {
-      validationTextView.setText(getContext().getString(R.string.validation_required));
+    } catch (final NumberFormatException nfe) {
+      validationTextView.setText(getContext().getString(R.string.validation_number_required));
       validationTextView.setVisibility(VISIBLE);
       setValid(false);
     }
@@ -105,7 +119,10 @@ public class CreateNumberComponentView extends ComponentView {
     if (getNameTextView() != null && StringUtils.isNotBlank(getNameTextView().getText())) {
       component.setName(getNameTextView().getText().toString());
     }
-    component.getValues().add(new EntryComponentValue(numberEditText.getText().toString()));
+    final DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+    df.setMaximumFractionDigits(6);
+    component.getValues().add(new EntryComponentValue(
+      df.format(Float.parseFloat(numberEditText.getText().toString()))));
     return component;
   }
 

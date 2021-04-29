@@ -23,7 +23,7 @@ public abstract class EntryDao {
   }
 
   @Transaction
-  @Query("SELECT e.id, e.start_timestamp, s.score, e.time_zone " +
+  @Query("SELECT DISTINCT(e.id), e.start_timestamp, s.score, e.time_zone " +
     "FROM `entry` e LEFT JOIN `sentiment` s ON e.id = s.entry_fk " +
     "WHERE s.sentence_begin_offset IS NULL ORDER BY e.start_timestamp DESC")
   public abstract LiveData<List<EntryForm>> getList();
