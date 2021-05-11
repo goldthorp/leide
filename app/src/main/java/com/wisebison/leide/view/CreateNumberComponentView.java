@@ -122,7 +122,7 @@ public class CreateNumberComponentView extends ComponentView {
     final DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
     df.setMaximumFractionDigits(6);
     component.getValues().add(new EntryComponentValue(
-      df.format(Float.parseFloat(numberEditText.getText().toString()))));
+      df.format(Double.parseDouble(numberEditText.getText().toString()))));
     return component;
   }
 
