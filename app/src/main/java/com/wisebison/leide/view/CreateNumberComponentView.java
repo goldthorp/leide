@@ -7,7 +7,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 
+import com.maltaisn.calcdialog.CalcDialog;
 import com.wisebison.leide.R;
 import com.wisebison.leide.model.EntryComponent;
 import com.wisebison.leide.model.EntryComponentType;
@@ -19,21 +21,29 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
+import lombok.Getter;
+
 public class CreateNumberComponentView extends ComponentView {
 
+  @Getter
   private final EditText numberEditText;
   private final TextView validationTextView;
 
   private final String minimum;
   private final String maximum;
 
+  @Getter
+  private final Integer idx;
+
   public CreateNumberComponentView(@NonNull final Context context) {
-    this(context, null, null, null);
+    this(context, null, null, null, null, null);
   }
 
   public CreateNumberComponentView(@NonNull final Context context, final String name,
-                                   final String minimum, final String maximum) {
+                                   final String minimum, final String maximum,
+                                   final CalcDialog calcDialog, final Integer idx) {
     super(context, name);
+    this.idx = idx;
     setValid(false);
     this.minimum = minimum;
     this.maximum = maximum;
@@ -69,6 +79,11 @@ public class CreateNumberComponentView extends ComponentView {
         }
       });
     }
+
+    findViewById(R.id.calc_icon).setOnClickListener(v -> {
+      calcDialog.show(((AppCompatActivity)getContext()).getSupportFragmentManager(),
+        CreateNumberComponentView.class.getSimpleName());
+    });
   }
 
   private void handleValidation(final String valueStr) {

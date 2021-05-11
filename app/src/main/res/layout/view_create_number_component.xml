@@ -19,4 +19,14 @@
         app:layout_constraintTop_toBottomOf="@id/number_edit_text"
         app:layout_constraintLeft_toLeftOf="parent"
         android:textColor="@color/red"/>
+
+    <ImageView
+        android:id="@+id/calc_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/calc"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="7dp"
+        app:layout_constraintLeft_toRightOf="@id/number_edit_text" />
 </androidx.constraintlayout.widget.ConstraintLayout>

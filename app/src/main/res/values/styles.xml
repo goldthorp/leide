@@ -8,6 +8,7 @@
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:actionBarStyle">@style/AppTheme.ActionBarStyle</item>
         <item name="android:windowBackground">@color/background</item>
+        <item name="calcDialogStyle">@style/CustomCalcDialogStyle</item>
     </style>
 
     <style name="AppTheme.ActionBarStyle" parent="@android:style/Widget.Holo.Light.ActionBar">
@@ -16,5 +17,14 @@
 
     <style name="AppTheme.ActionBar.TitleTextStyle" parent="@android:style/TextAppearance.Holo.Widget.ActionBar.Title">
         <item name="android:textColor">@color/primary_dark</item>
+    </style>
+
+    <style name="CustomCalcDialogStyle" parent="CalcDialogStyle">
+        <item name="calcDialogButtonStyle">@style/Widget.AppCompat.Button.ButtonBar.AlertDialog</item>
+    </style>
+
+    <style name="CustomCalcDialogButtonStyle" parent="CalcDialogButtonStyle">
+        <item name="android:textColor">@color/primary_dark</item>
+        <item name="android:textSize">16sp</item>
     </style>
 </resources>

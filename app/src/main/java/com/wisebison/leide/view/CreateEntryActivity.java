@@ -13,9 +13,11 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Spinner;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.maltaisn.calcdialog.CalcDialog;
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.EntryComponentTemplateDao;
@@ -31,6 +33,7 @@ import com.wisebison.leide.util.BackgroundUtil;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,7 +44,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class CreateEntryActivity extends AppCompatActivity {
+public class CreateEntryActivity extends AppCompatActivity implements CalcDialog.CalcDialogCallback {
 
   private static final String TAG = CreateEntryActivity.class.getSimpleName();
 
@@ -51,6 +54,8 @@ public class CreateEntryActivity extends AppCompatActivity {
   private EntryComponentTemplateAdapter templateAdapter;
 
   private ArrayList<EntryComponentTemplateForm> templates;
+
+  private int calcDialogIdx;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -279,8 +284,13 @@ public class CreateEntryActivity extends AppCompatActivity {
         componentContainer.addView(new CreateTextComponentView(this, name), index);
         break;
       case NUMBER:
+        final CalcDialog calcDialog = new CalcDialog();
+        calcDialog.getSettings().setExpressionShown(true);
+        calcDialog.getSettings().setExpressionEditable(true);
+        calcDialog.getSettings().setRequestCode(calcDialogIdx);
         componentContainer.addView(new CreateNumberComponentView(this, name,
-          settings.get("minimum"), settings.get("maximum")), index);
+          settings.get("minimum"), settings.get("maximum"), calcDialog, calcDialogIdx), index);
+        calcDialogIdx++;
         break;
       default:
         Log.e(TAG, "Unsupported entry component type " + componentType);
@@ -342,6 +352,19 @@ public class CreateEntryActivity extends AppCompatActivity {
       finish();
     } catch (final ExecutionException | InterruptedException e) {
       e.printStackTrace();
+    }
+  }
+
+  @Override
+  public void onValueEntered(final int requestCode, @Nullable final BigDecimal value) {
+    for (int i = 0; i < componentContainer.getChildCount(); i++) {
+      final View componentView = componentContainer.getChildAt(i);
+      if (componentView instanceof CreateNumberComponentView) {
+        final CreateNumberComponentView numCompView = (CreateNumberComponentView) componentView;
+        if (numCompView.getIdx() == requestCode) {
+          numCompView.getNumberEditText().setText(value.toPlainString());
+        }
+      }
     }
   }
 }
