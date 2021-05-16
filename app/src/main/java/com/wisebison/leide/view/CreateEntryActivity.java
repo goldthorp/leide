@@ -1,5 +1,7 @@
 package com.wisebison.leide.view;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -13,9 +15,11 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Spinner;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.maltaisn.calcdialog.CalcDialog;
 import com.wisebison.leide.R;
@@ -30,6 +34,7 @@ import com.wisebison.leide.model.EntryComponentTemplateForm;
 import com.wisebison.leide.model.EntryComponentType;
 import com.wisebison.leide.util.ArrayAdapterItem;
 import com.wisebison.leide.util.BackgroundUtil;
+import com.wisebison.leide.util.GetLocationTask;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -37,6 +42,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -371,6 +377,31 @@ public class CreateEntryActivity extends AppCompatActivity implements CalcDialog
           numCompView.getNumberEditText().setText(value.toPlainString());
         }
       }
+    }
+  }
+
+  List<GetLocationTask.GetLocationTaskCallback> getLocationCallbacks = new ArrayList<>();
+
+  public void getLocation(final GetLocationTask.GetLocationTaskCallback callback) {
+    if (ActivityCompat.checkSelfPermission(this,
+      Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+      new GetLocationTask(callback).execute(this);
+    } else {
+      ActivityCompat.requestPermissions(this,
+        new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+      getLocationCallbacks.add(callback);
+    }
+  }
+
+  @Override
+  public void onRequestPermissionsResult(
+    final int requestCode, @NonNull final String[] permissions, @NonNull final int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (getLocationCallbacks.size() > 0 && requestCode == 1 &&
+      grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+      new GetLocationTask(
+        getLocationCallbacks.toArray(new GetLocationTask.GetLocationTaskCallback[0])).execute(this);
+      getLocationCallbacks.clear();
     }
   }
 }

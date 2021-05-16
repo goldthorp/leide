@@ -2,9 +2,6 @@ package com.wisebison.leide.view;
 
 import android.content.Context;
 import android.location.Address;
-import android.location.Geocoder;
-import android.os.AsyncTask;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
@@ -18,8 +15,6 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 
-import com.google.android.gms.common.util.CollectionUtils;
-import com.google.android.gms.location.LocationServices;
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.EntryComponentDao;
@@ -28,10 +23,6 @@ import com.wisebison.leide.model.EntryComponentType;
 import com.wisebison.leide.model.EntryComponentValue;
 
 import org.apache.commons.lang3.StringUtils;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
 
 public class CreateLocationComponentView extends ComponentView {
 
@@ -73,13 +64,15 @@ public class CreateLocationComponentView extends ComponentView {
 
     // Get the device's last known location and reverse geocode the coordinates on a background
     // thread. Populate the spinner with the addresses for auto-filling the location input.
-    new GetLocationTask(addresses -> {
-      for (final Address address : addresses) {
-        addressAdapter.add(address.getAddressLine(0));
-      }
-      locationSpinner.setAdapter(addressAdapter);
-      setLocationDisplay(addresses.get(0).getAddressLine(0));
-    }).execute(getContext());
+    if (getContext() instanceof CreateEntryActivity) {
+      ((CreateEntryActivity) (getContext())).getLocation(addresses -> {
+        for (final Address address : addresses) {
+          addressAdapter.add(address.getAddressLine(0));
+        }
+        locationSpinner.setAdapter(addressAdapter);
+        setLocationDisplay(addresses.get(0).getAddressLine(0));
+      });
+    }
 
     // When a spinner item is selected, set the EditText value
     locationSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -88,8 +81,10 @@ public class CreateLocationComponentView extends ComponentView {
         final AdapterView<?> parent, final View view, final int position, final long id) {
         locationEditText.setText(addressAdapter.getItem(position));
       }
+
       @Override
-      public void onNothingSelected(final AdapterView<?> parent) {}
+      public void onNothingSelected(final AdapterView<?> parent) {
+      }
     });
 
     // Spinner for choosing from recently used locations
@@ -119,8 +114,10 @@ public class CreateLocationComponentView extends ComponentView {
           locationEditText.setText(recentAddressesAdapter.getItem(position));
         }
       }
+
       @Override
-      public void onNothingSelected(final AdapterView<?> parent) {}
+      public void onNothingSelected(final AdapterView<?> parent) {
+      }
     });
 
     // Build dialog
@@ -147,53 +144,5 @@ public class CreateLocationComponentView extends ComponentView {
     final EntryComponent component = new EntryComponent(EntryComponentType.LOCATION);
     component.getValues().add(new EntryComponentValue("display", locationDisplay));
     return component;
-  }
-
-  /**
-   * Task to get the last known location for the device and reverse geocode the coordinates (get
-   * a human-readable address from the latitude/longitude of the device).
-   *
-   * This is used to pre-populate the location EditText in the set location dialog that displays
-   * on save.
-   */
-  private static class GetLocationTask extends AsyncTask<Context, Void, Void> {
-
-    private final GetLocationTaskCallback callback;
-    GetLocationTask(final GetLocationTaskCallback callback) {
-      this.callback = callback;
-    }
-
-    @Override
-    protected Void doInBackground(final Context... contexts) {
-      // TODO request permission
-      LocationServices.getFusedLocationProviderClient(contexts[0]).getLastLocation()
-        .addOnSuccessListener(location -> {
-          if (location != null) {
-            // Device's last location found. Attempt to reverse geocode the coordinates.
-            final Geocoder geocoder = new Geocoder(contexts[0], Locale.getDefault());
-            try {
-              final List<Address> address = geocoder.getFromLocation(location.getLatitude(),
-                location.getLongitude(), 5);
-              if (!CollectionUtils.isEmpty(address) &&
-                StringUtils.isNotBlank(address.get(0).getAddressLine(0))) {
-                callback.resolve(address);
-              } else {
-                Log.d("DEBUG", "address not found");
-              }
-            } catch (final IOException e) {
-              e.printStackTrace();
-            }
-          } else {
-            Log.d("DEBUG", "location not found");
-          }
-        }).addOnFailureListener(e -> {
-        Log.e("GET_LOCATION_FAILED", e.getMessage(), e);
-      });
-      return null;
-    }
-  }
-
-  private interface GetLocationTaskCallback {
-    void resolve(List<Address> addresses);
   }
 }
