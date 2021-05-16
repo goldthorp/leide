@@ -157,6 +157,12 @@ public class CreateEntryActivity extends AppCompatActivity implements CalcDialog
           break;
         }
       }
+      for (final EntryComponentTemplateForm template : this.templates) {
+        if (template.getType() == EntryComponentType.LOCATION) {
+          addComponent(template.getType(), template.getName(), template.getSettingsAsMap(), -1);
+          break;
+        }
+      }
 
       final LinearLayout newComponentOption = dialogLayout.findViewById(R.id.new_component_option);
       final LinearLayout newComponentDialogLayout = new LinearLayout(this);
