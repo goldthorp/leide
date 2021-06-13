@@ -399,7 +399,7 @@ public class BackupUtil {
    */
   private Method findDaoMethod(final String methodName) {
     final BackupEntityGeneratedDao dao = localDb.getBackupEntityGeneratedDao();
-    final Method[] methods = Objects.requireNonNull(dao.getClass()).getMethods();
+    final Method[] methods = dao.getClass().getMethods();
     for (final Method method : methods) {
       if (StringUtils.equals(methodName, method.getName())) {
         return method;
