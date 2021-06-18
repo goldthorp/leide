@@ -14,7 +14,6 @@ import com.wisebison.leide.R;
 import com.wisebison.leide.util.Utils;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -39,7 +38,7 @@ public class EntryForm implements Serializable {
   @ColumnInfo(name = "id")
   private Long id;
 
-  @ColumnInfo(name = "start_timestamp")
+  @ColumnInfo(name = "display_timestamp")
   private Long timestamp;
 
   @ColumnInfo(name = "score")
@@ -54,6 +53,13 @@ public class EntryForm implements Serializable {
   public SpannableString getEntryForDisplay(final Context context, final boolean showSentiment) {
     final StringBuilder stringBuilder = new StringBuilder();
     final List<SpanHolder> spans = new ArrayList<>();
+    final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
+    sdf.setTimeZone(TimeZone.getTimeZone(timeZone));
+    final String formattedDate = sdf.format(getTimestamp());
+    spans.add(getSpanHolder(stringBuilder, formattedDate,
+      new StyleSpan(Typeface.BOLD), new RelativeSizeSpan(1.3f)));
+    stringBuilder.append(formattedDate);
+    stringBuilder.append("\n");
     for (final EntryComponentForm component : getComponents()) {
       if (component.getType() == null) {
         spans.add(getSpanHolder(stringBuilder, component.getName(),
@@ -70,15 +76,6 @@ public class EntryForm implements Serializable {
               stringBuilder.append(component.getName()).append(" ");
             }
             stringBuilder.append(component.getValues().get(0).getValue());
-            stringBuilder.append("\n");
-            break;
-          case DATE:
-            final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
-            sdf.setTimeZone(TimeZone.getTimeZone(timeZone));
-            final String formattedDate = sdf.format(NumberUtils.toLong(component.getValue("millis")));
-            spans.add(getSpanHolder(stringBuilder, formattedDate,
-              new StyleSpan(Typeface.BOLD), new RelativeSizeSpan(1.3f)));
-            stringBuilder.append(formattedDate);
             stringBuilder.append("\n");
             break;
           case LOCATION:

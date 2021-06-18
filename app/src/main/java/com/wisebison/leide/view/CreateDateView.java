@@ -4,31 +4,28 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
 import com.wisebison.leide.R;
-import com.wisebison.leide.model.EntryComponent;
-import com.wisebison.leide.model.EntryComponentType;
-import com.wisebison.leide.model.EntryComponentValue;
 import com.wisebison.leide.util.Utils;
 
 import java.util.Calendar;
 
-public class CreateDateComponentView extends ComponentView{
+import lombok.Getter;
 
+public class CreateDateView extends LinearLayout {
+
+  @Getter
   private long dateMillis;
 
   private final TextView dateTextView;
 
-  public CreateDateComponentView(@NonNull final Context context) {
-    this(context, null);
-  }
-
-  public CreateDateComponentView(@NonNull final Context context, final String name) {
-    super(context, name);
-
+  public CreateDateView(@NonNull final Context context) {
+    super(context);
+    setOrientation(VERTICAL);
     inflate(context, R.layout.view_create_date_component, this);
     dateTextView = findViewById(R.id.date_text_view);
     setDateMillis(System.currentTimeMillis());
@@ -54,10 +51,4 @@ public class CreateDateComponentView extends ComponentView{
     dateTextView.setText(Utils.formatDate(dateMillis));
   }
 
-  @Override
-  public EntryComponent getComponent() {
-    final EntryComponent component = new EntryComponent(EntryComponentType.DATE);
-    component.getValues().add(new EntryComponentValue("millis", String.valueOf(dateMillis)));
-    return component;
-  }
 }

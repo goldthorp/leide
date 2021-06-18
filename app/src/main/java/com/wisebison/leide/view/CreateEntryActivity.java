@@ -137,7 +137,7 @@ public class CreateEntryActivity extends AppCompatActivity implements CalcDialog
     final ImageView addComponent = findViewById(R.id.add_component);
 
     templates = new ArrayList<>();
-
+    componentContainer.addView(new CreateDateView(this));
     templateDao.getAll().observe(this, templates -> {
       this.templates.clear();
       this.templates.addAll(templates);
@@ -157,12 +157,6 @@ public class CreateEntryActivity extends AppCompatActivity implements CalcDialog
       });
 
       templateDialog.setView(dialogLayout);
-      for (final EntryComponentTemplateForm template : this.templates) {
-        if (template.getType() == EntryComponentType.DATE) {
-          addComponent(template.getType(), template.getName(), template.getSettingsAsMap(), -1);
-          break;
-        }
-      }
       for (final EntryComponentTemplateForm template : this.templates) {
         if (template.getType() == EntryComponentType.LOCATION) {
           addComponent(template.getType(), template.getName(), template.getSettingsAsMap(), -1);
@@ -279,16 +273,15 @@ public class CreateEntryActivity extends AppCompatActivity implements CalcDialog
     }
     if (componentType.isOnlyOnePerEntry()) {
       for (int i = 0; i < componentContainer.getChildCount(); i++) {
-        final ComponentView componentView = (ComponentView) componentContainer.getChildAt(i);
-        if (componentView.getComponent().getType() == componentType) {
-          return;
+        if (componentContainer.getChildAt(i) instanceof ComponentView) {
+          final ComponentView componentView = (ComponentView) componentContainer.getChildAt(i);
+          if (componentView.getComponent().getType() == componentType) {
+            return;
+          }
         }
       }
     }
     switch (componentType) {
-      case DATE:
-        componentContainer.addView(new CreateDateComponentView(this, name), index);
-        break;
       case LOCATION:
         componentContainer.addView(new CreateLocationComponentView(this, name), index);
         break;
@@ -332,10 +325,12 @@ public class CreateEntryActivity extends AppCompatActivity implements CalcDialog
   private boolean formIsValid() {
     boolean valid = true;
     for (int i = 0; i < componentContainer.getChildCount(); i++) {
-      final ComponentView componentView = (ComponentView) componentContainer.getChildAt(i);
-      if (!componentView.isValid()) {
-        valid = false;
-        componentView.showValidationMessage();
+      if (componentContainer.getChildAt(i) instanceof ComponentView) {
+        final ComponentView componentView = (ComponentView) componentContainer.getChildAt(i);
+        if (!componentView.isValid()) {
+          valid = false;
+          componentView.showValidationMessage();
+        }
       }
     }
     return valid;
@@ -349,12 +344,16 @@ public class CreateEntryActivity extends AppCompatActivity implements CalcDialog
     entry.setStartTimestamp(startTimestamp);
     entry.setSaveTimestamp(System.currentTimeMillis());
     entry.setTimeZone(TimeZone.getDefault().getID());
+    final CreateDateView dateView = (CreateDateView) componentContainer.getChildAt(0);
+    entry.setDisplayTimestamp(dateView.getDateMillis());
 
     for (int i = 0; i < componentContainer.getChildCount(); i++) {
-      final ComponentView componentView = (ComponentView) componentContainer.getChildAt(i);
-      final EntryComponent component = componentView.getComponent();
-      component.setListSeq(i);
-      entry.getComponents().add(component);
+      if (componentContainer.getChildAt(i) instanceof ComponentView) {
+        final ComponentView componentView = (ComponentView) componentContainer.getChildAt(i);
+        final EntryComponent component = componentView.getComponent();
+        component.setListSeq(i);
+        entry.getComponents().add(component);
+      }
     }
     // Insert on a separate thread because otherwise room throws an error
     final ExecutorService executorService = Executors.newSingleThreadExecutor();

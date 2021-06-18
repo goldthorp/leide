@@ -7,7 +7,6 @@ import lombok.Getter;
 public enum EntryComponentType {
   TEXT(false),
   NUMBER(false),
-  DATE(true),
   LOCATION(true);
 
   @Getter

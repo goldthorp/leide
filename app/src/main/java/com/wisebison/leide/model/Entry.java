@@ -30,6 +30,9 @@ public class Entry implements Comparable<Entry>, Serializable {
   @ColumnInfo(name = "save_timestamp")
   private Long saveTimestamp;
 
+  @ColumnInfo(name = "display_timestamp")
+  private Long displayTimestamp;
+
   @ColumnInfo(name = "time_zone")
   private String timeZone;
 

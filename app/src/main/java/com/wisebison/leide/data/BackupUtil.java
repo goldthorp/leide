@@ -338,7 +338,10 @@ public class BackupUtil {
       final Class<?> aClass = findTypeForBackupEntityName(classes, entityNode.getKey());
       final List<Object> entities = new ArrayList<>();
       for (final Map<String, Object> entityData : entityNode.getValue()) {
-        entities.add(om.convertValue(entityData, aClass));
+        final Object entity = om.convertValue(entityData, aClass);
+        if (entity != null) {
+          entities.add(entity);
+        }
       }
       result.add(entities);
     }

@@ -23,9 +23,9 @@ public abstract class EntryDao {
   }
 
   @Transaction
-  @Query("SELECT DISTINCT(e.id), e.start_timestamp, s.score, e.time_zone " +
+  @Query("SELECT DISTINCT(e.id), e.display_timestamp, s.score, e.time_zone " +
     "FROM `entry` e LEFT JOIN `sentiment` s ON e.id = s.entry_fk " +
-    "WHERE s.sentence_begin_offset IS NULL ORDER BY e.start_timestamp DESC")
+    "WHERE s.sentence_begin_offset IS NULL ORDER BY e.display_timestamp DESC")
   public abstract LiveData<List<EntryForm>> getList();
 
   @Query("SELECT COUNT(*) FROM `entry`")
@@ -38,23 +38,23 @@ public abstract class EntryDao {
     return BackgroundUtil.doInBackground(() -> _getById(entryId));
   }
 
-  @Query("SELECT * FROM `entry` WHERE start_timestamp IN " +
-    "(SELECT MAX(start_timestamp) FROM `entry` WHERE start_timestamp < :startTimestamp)")
+  @Query("SELECT * FROM `entry` WHERE display_timestamp IN " +
+    "(SELECT MAX(display_timestamp) FROM `entry` WHERE display_timestamp < :startTimestamp)")
   abstract Entry _getPrevious(long startTimestamp);
 
   public BackgroundUtil.Background<Entry> getPrevious(final long startTimestamp) {
     return BackgroundUtil.doInBackground(() -> _getPrevious(startTimestamp));
   }
 
-  @Query("SELECT * FROM `entry` WHERE start_timestamp IN " +
-    "(SELECT MIN(start_timestamp) FROM `entry` WHERE start_timestamp > :startTimestamp)")
+  @Query("SELECT * FROM `entry` WHERE display_timestamp IN " +
+    "(SELECT MIN(display_timestamp) FROM `entry` WHERE display_timestamp > :startTimestamp)")
   abstract Entry _getNext(long startTimestamp);
 
   public BackgroundUtil.Background<Entry> getNext(final long startTimestamp) {
     return BackgroundUtil.doInBackground(() -> _getNext(startTimestamp));
   }
 
-  @Query("SELECT MIN(start_timestamp) FROM `entry`")
+  @Query("SELECT MIN(display_timestamp) FROM `entry`")
   abstract Long _getEarliestTimestamp();
 
   public BackgroundUtil.Background<Long> getEarliestTimestamp() {

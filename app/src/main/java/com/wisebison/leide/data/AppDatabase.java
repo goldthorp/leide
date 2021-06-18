@@ -45,8 +45,7 @@ public abstract class AppDatabase extends RoomDatabase {
           @Override
           public void onCreate(@NonNull final SupportSQLiteDatabase db) {
             super.onCreate(db);
-            db.execSQL("INSERT INTO entry_component_template (name, type) VALUES ('Date', 2)");
-            db.execSQL("INSERT INTO entry_component_template (name, type) VALUES ('Location', 3)");
+            db.execSQL("INSERT INTO entry_component_template (name, type) VALUES ('Location', 2)");
             db.execSQL("INSERT INTO entry_component_template (name, type) VALUES ('Text', 0)");
           }
         })
