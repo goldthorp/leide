@@ -8,6 +8,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,6 +22,7 @@ public class EntryComponentForm {
   private Long entryId;
 
   @TypeConverters(EntryComponentType.class)
+  @Nullable
   private EntryComponentType type;
 
   private String name;

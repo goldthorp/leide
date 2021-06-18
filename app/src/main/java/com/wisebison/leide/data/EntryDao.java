@@ -28,6 +28,17 @@ public abstract class EntryDao {
     "WHERE s.sentence_begin_offset IS NULL ORDER BY e.display_timestamp DESC")
   public abstract LiveData<List<EntryForm>> getList();
 
+  @Query("SELECT DISTINCT(e.id), e.display_timestamp, s.score, e.time_zone " +
+    "FROM `entry` e LEFT JOIN `sentiment` s ON e.id = s.entry_fk " +
+    "WHERE s.sentence_begin_offset IS NULL " +
+    "ORDER BY CASE WHEN :isAsc = 1 THEN display_timestamp END ASC, " +
+    "CASE WHEN :isAsc = 0 THEN display_timestamp END DESC")
+  abstract List<EntryForm> _getList(boolean isAsc);
+
+  public BackgroundUtil.Background<List<EntryForm>> getList(final boolean isAsc) {
+    return BackgroundUtil.doInBackground(() -> _getList(isAsc));
+  }
+
   @Query("SELECT COUNT(*) FROM `entry`")
   public abstract LiveData<Long> getCount();
 

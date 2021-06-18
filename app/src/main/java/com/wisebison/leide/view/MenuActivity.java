@@ -15,15 +15,20 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
-import com.wisebison.leide.data.EntryComponentDao;
 import com.wisebison.leide.data.EntryDao;
+import com.wisebison.leide.model.EntryComponentForm;
+import com.wisebison.leide.model.EntryForm;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.TimeZone;
 
 public class MenuActivity extends AppCompatActivity {
 
@@ -73,53 +78,48 @@ public class MenuActivity extends AppCompatActivity {
     }
   }
 
-  // FIXME:
   private void writeEntryTextToFile(final ParcelFileDescriptor pfd) {
     final FileOutputStream fos = new FileOutputStream(pfd.getFileDescriptor());
 
     final StringBuilder stringBuilder = new StringBuilder();
     final AppDatabase appDatabase = AppDatabase.getInstance(this);
     final EntryDao entryDao = appDatabase.getEntryDao();
-    final EntryComponentDao entryComponentDao = appDatabase.getEntryComponentDao();
-//    entryComponentDao.getAll().then(components -> {
-//      if (CollectionUtils.isEmpty(components)) {
-//        Log.d(TAG, "Attempting to export empty components " + components);
-//        return;
-//      }
-//      try {
-//        final long firstEntryId = components.get(0).getEntryId();
-//        final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
-//        sdf.setTimeZone(TimeZone.getTimeZone(entry.getti));
-//        stringBuilder.append(sdf.format(
-//          new Date(NumberUtils.toLong(component.getValue("millis")))));
-//        for (final EntryComponent component : components) {
-//          if (component.getEntryId() != firstEntryId && component.getListSeq() == 0) {
-//            stringBuilder.append("\n");
-//          }
-//          switch (component.getType()) {
-//            case TEXT:
-//              stringBuilder.append(component.getValues().get(0).getValue());
-//              break;
-//            case DATE:
-//              final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
-//              final String timeZone = entryDao.getTimeZone(component.getEntryId());
-//              sdf.setTimeZone(TimeZone.getTimeZone(timeZone));
-//              stringBuilder.append(sdf.format(
-//                new Date(NumberUtils.toLong(component.getValue("millis")))));
-//              break;
-//            case LOCATION:
-//              stringBuilder.append(component.getValue("display"));
-//              break;
-//            }
-//          stringBuilder.append("\n");
-//        }
-//        fos.write(stringBuilder.toString().getBytes());
-//        fos.close();
-//        pfd.close();
-//      } catch (final IOException e) {
-//        e.printStackTrace();
-//      }
-//    });
+    entryDao.getList(true).then(entries -> {
+      for (final EntryForm entry : entries) {
+        String location = null;
+        String text = null;
+        for (final EntryComponentForm component : entry.getComponents()) {
+          if (component.getType() != null) {
+            switch (component.getType()) {
+              case TEXT:
+                text = component.getValue(null);
+                break;
+              case LOCATION:
+                location = component.getValue("display");
+                break;
+            }
+            if (StringUtils.isNotBlank(text)) {
+              final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
+              sdf.setTimeZone(TimeZone.getTimeZone(entry.getTimeZone()));
+              final String formattedDate = sdf.format(entry.getTimestamp());
+              stringBuilder.append(formattedDate).append("\n");
+              stringBuilder.append(text).append("\n");
+              if (StringUtils.isNotBlank(location)) {
+                stringBuilder.append(location).append("\n");
+              }
+            }
+          }
+        }
+        stringBuilder.append("\n\n");
+      }
+      try {
+        fos.write(stringBuilder.toString().getBytes());
+        fos.close();
+        pfd.close();
+      } catch (final IOException e) {
+        e.printStackTrace();
+      }
+    });
   }
 
   @Override
