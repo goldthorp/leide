@@ -81,12 +81,17 @@ public class CreateEntryActivity extends AppCompatActivity implements CalcDialog
 
     final AlertDialog newComponentDialog = new AlertDialog.Builder(this)
       .setTitle(getString(R.string.create_new_component))
-      .setPositiveButton(R.string.submit, (dialog, which) -> {
+      .setPositiveButton(R.string.submit, null)
+      .create();
+
+    newComponentDialog.setOnShowListener(dialog -> {
+      final Button button = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_POSITIVE);
+      button.setOnClickListener(view -> {
         final AlertDialog alertDialog = (AlertDialog) dialog;
         final Spinner componentValueTypeSpinner =
           Objects.requireNonNull(alertDialog.findViewById(R.id.component_value_type_spinner));
         @SuppressWarnings("rawtypes") final EntryComponentType type = (EntryComponentType)
-            ((ArrayAdapterItem) componentValueTypeSpinner.getSelectedItem()).getId();
+          ((ArrayAdapterItem) componentValueTypeSpinner.getSelectedItem()).getId();
         final EditText nameEditText =
           Objects.requireNonNull(alertDialog.findViewById(R.id.new_component_name_edit_text));
         final CheckBox futureReuseCheckbox =
@@ -108,13 +113,15 @@ public class CreateEntryActivity extends AppCompatActivity implements CalcDialog
             settings.put("maximum", maximumEditText.getText().toString());
           }
         }
-        addComponent(type, nameEditText.getText().toString(), settings,  -1);
         if (futureReuseCheckbox.isChecked()) {
+          if (StringUtils.isBlank(nameEditText.getText())) {
+            return;
+          }
           final EntryComponentTemplate template = new EntryComponentTemplate();
           template.setType(type);
           template.setName(nameEditText.getText().toString());
           template.getSettings().add(new EntryComponentSetting("displayNameInEntry",
-              String.valueOf(displayNameInEntryCheckbox.isChecked())));
+            String.valueOf(displayNameInEntryCheckbox.isChecked())));
           if (type == EntryComponentType.NUMBER) {
             final EditText minimumEditText = Objects.requireNonNull(
               alertDialog.findViewById(R.id.number_component_minimum_edit_text));
@@ -131,8 +138,10 @@ public class CreateEntryActivity extends AppCompatActivity implements CalcDialog
           }
           BackgroundUtil.doInBackgroundNow(() -> templateDao.insert(template));
         }
-      })
-      .create();
+        addComponent(type, nameEditText.getText().toString(), settings, -1);
+        dialog.dismiss();
+      });
+    });
 
     final ImageView addComponent = findViewById(R.id.add_component);
 
