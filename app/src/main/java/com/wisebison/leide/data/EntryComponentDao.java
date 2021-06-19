@@ -47,7 +47,7 @@ public abstract class EntryComponentDao {
   }
 
   @Query("SELECT value FROM `entry_component` ec LEFT JOIN `entry_component_value` ecv ON " +
-    "`entry_component_fk` = ec.id WHERE type = 3 AND  ecv.name = 'display' " +
+    "`entry_component_fk` = ec.id WHERE type = 2 AND  ecv.name = 'display' " +
     "GROUP BY value ORDER BY MAX(ec.id) DESC LIMIT 5")
   abstract List<String> _getRecentLocations();
 
