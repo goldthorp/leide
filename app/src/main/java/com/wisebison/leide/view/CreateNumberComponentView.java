@@ -63,22 +63,20 @@ public class CreateNumberComponentView extends ComponentView {
     numberEditText = findViewById(R.id.number_edit_text);
 
     validationTextView = findViewById(R.id.number_component_validation_message_text_view);
-    if (StringUtils.isNotBlank(minimum) || StringUtils.isNotBlank(maximum)) {
-      numberEditText.addTextChangedListener(new TextWatcher() {
-        @Override
-        public void beforeTextChanged(
-          final CharSequence s, final int start, final int count, final int after) {}
+    numberEditText.addTextChangedListener(new TextWatcher() {
+      @Override
+      public void beforeTextChanged(
+        final CharSequence s, final int start, final int count, final int after) {}
 
-        @Override
-        public void onTextChanged(
-          final CharSequence s, final int start, final int before, final int count) {}
+      @Override
+      public void onTextChanged(
+        final CharSequence s, final int start, final int before, final int count) {}
 
-        @Override
-        public void afterTextChanged(final Editable s) {
-          handleValidation(s.toString());
-        }
-      });
-    }
+      @Override
+      public void afterTextChanged(final Editable s) {
+        handleValidation(s.toString());
+      }
+    });
 
     findViewById(R.id.calc_icon).setOnClickListener(v -> {
       calcDialog.show(((AppCompatActivity)getContext()).getSupportFragmentManager(),
