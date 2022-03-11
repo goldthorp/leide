@@ -2,7 +2,7 @@ package com.wisebison.leide.cloud;
 
 import android.os.AsyncTask;
 import android.util.Log;
-
+import androidx.room.Transaction;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -16,6 +16,7 @@ import com.google.api.services.language.v1.model.Document;
 import com.google.api.services.language.v1.model.Entity;
 import com.google.api.services.language.v1.model.EntityMention;
 import com.google.api.services.language.v1.model.Sentence;
+import com.google.common.collect.Lists;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.EntryComponentDao;
 import com.wisebison.leide.data.NamedEntityDao;
@@ -23,19 +24,18 @@ import com.wisebison.leide.data.SentimentDao;
 import com.wisebison.leide.model.EntryComponentForm;
 import com.wisebison.leide.model.NamedEntity;
 import com.wisebison.leide.model.Sentiment;
-
+import lombok.EqualsAndHashCode;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import lombok.EqualsAndHashCode;
 
 /**
  * Queries the GCNLAPI and saves the results in the database.
@@ -81,55 +81,64 @@ class AnalyzeTask extends AsyncTask<EntryComponentForm, Integer, Void> {
         new NetHttpTransport(), JacksonFactory.getDefaultInstance(), credential).build();
   }
 
+  @Transaction
   @Override
   protected Void doInBackground(final EntryComponentForm... components) {
     // Analyze the specified components, save the results, and mark the components as analyzed.
     int analyzedCount = 0;
-    final Collection<NamedEntity> entities = new ArrayList<>();
-    final Collection<Sentiment> sentiments = new ArrayList<>();
-    final Set<Long> entitiesAnalyzedIds = new HashSet<>();
-    final Set<Long> sentimentAnalyzedIds = new HashSet<>();
-    for (final EntryComponentForm component : components) {
-      if (!component.isEntitiesAnalyzed()) {
-        try {
-            // Perform the query.
-          entities.addAll(requestNamedEntities(component));
-          // Mark this entry as analyzed.
-          entitiesAnalyzedIds.add(component.getId());
-        } catch (final IOException e) {
-          if (e instanceof GoogleJsonResponseException) {
-            entitiesAnalyzedIds.add(component.getId());
+    List<List<EntryComponentForm>> componentPartitions = Lists.partition(Arrays.asList(components), 100);
+    for (List<EntryComponentForm> partition : componentPartitions) {
+      final Collection<NamedEntity> entities = new ArrayList<>();
+      final Collection<Sentiment> sentiments = new ArrayList<>();
+      final Set<Long> entitiesAnalyzedIds = new HashSet<>();
+      final Set<Long> sentimentAnalyzedIds = new HashSet<>();
+      for (final EntryComponentForm component : partition) {
+        if (!component.isEntitiesAnalyzed()) {
+          try {
+            if (CollectionUtils.isNotEmpty(component.getValues())) {
+              // Perform the query.
+              entities.addAll(requestNamedEntities(component));
+              // Mark this entry as analyzed.
+              entitiesAnalyzedIds.add(component.getId());
+            }
+          } catch (final IOException e) {
+            if (e instanceof GoogleJsonResponseException) {
+              entitiesAnalyzedIds.add(component.getId());
+            }
+            Log.e(TAG, "failed to analyze entities", e);
           }
-          Log.e(TAG, "failed to analyze entities", e);
         }
-      }
-      if (!component.isSentimentAnalyzed()) {
-        try {
-          // Perform the query
-          sentiments.addAll(requestSentiment(component));
-          // Mark this entry as analyzed
-          sentimentAnalyzedIds.add(component.getId());
-        } catch (final IOException e) {
-          if (e instanceof GoogleJsonResponseException) {
-            sentimentAnalyzedIds.add(component.getId());
+        if (!component.isSentimentAnalyzed()) {
+          try {
+            if (CollectionUtils.isNotEmpty(component.getValues())) {
+              // Perform the query
+              sentiments.addAll(requestSentiment(component));
+              // Mark this entry as analyzed
+              sentimentAnalyzedIds.add(component.getId());
+            }
+          } catch (final IOException e) {
+            if (e instanceof GoogleJsonResponseException) {
+              sentimentAnalyzedIds.add(component.getId());
+            }
+            Log.e(TAG, "failed to analyze sentiment", e);
           }
-          Log.e(TAG, "failed to analyze sentiment", e);
         }
+        // Notify UI of number of components analyzed
+        publishProgress(++analyzedCount);
       }
-      // Notify UI of number of components analyzed
-      publishProgress(++analyzedCount);
-    }
-    if (CollectionUtils.isNotEmpty(entities)) {
-      namedEntityDao.insertAll(entities);
-    }
-    if (CollectionUtils.isNotEmpty(sentiments)) {
-      sentimentDao.insertAll(sentiments);
-    }
 
-    // Save all components to mark them as analyzed
-    Log.d(TAG, "updating components");
-    entryComponentDao.markAsEntitiesAnalyzed(entitiesAnalyzedIds);
-    entryComponentDao.markAsSentimentAnalyzed(sentimentAnalyzedIds);
+      if (CollectionUtils.isNotEmpty(entities)) {
+        namedEntityDao.insertAll(entities);
+      }
+      if (CollectionUtils.isNotEmpty(sentiments)) {
+        sentimentDao.insertAll(sentiments);
+      }
+
+      // Save all components to mark them as analyzed
+      Log.d(TAG, "updating components");
+      entryComponentDao.markAsEntitiesAnalyzed(entitiesAnalyzedIds);
+      entryComponentDao.markAsSentimentAnalyzed(sentimentAnalyzedIds);
+    }
     return null;
   }
 
