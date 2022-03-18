@@ -1,56 +1,68 @@
 <resources>
-    <string name="app_name">Leide</string>
+  <string name="app_name">Leide</string>
 
-    <string name="entry_count">%d Entries</string>
-    <string name="save">Save</string>
-    <string name="new_entry_placeholder">Start typing your entry…</string>
-    <string name="confirm_discard_title">Discard Changes</string>
-    <string name="confirm_discard_message">Are you sure you want discard this entry?</string>
-    <string name="set_location">Set Location</string>
+  <string name="entry_count">%d Entries</string>
+  <string name="save">Save</string>
+  <string name="new_entry_placeholder">Start typing your entry…</string>
+  <string name="confirm_discard_title">Discard Changes</string>
+  <string name="confirm_discard_message">Are you sure you want discard this entry?</string>
+  <string name="set_location">Set Location</string>
 
-    <string name="previous">Previous</string>
-    <string name="next">Next</string>
+  <string name="previous">Previous</string>
+  <string name="next">Next</string>
 
-    <string name="module_type_NAMED_ENTITIES">Named Entities</string>
-    <string name="module_type_SENTMENT">Sentiment</string>
-    <string name="add">Add</string>
+  <string name="module_type_NAMED_ENTITIES">Named Entities</string>
+  <string name="module_type_SENTMENT">Sentiment</string>
+  <string name="add">Add</string>
 
-    <string name="analysis_progress">Analyzing %d%%</string>
+  <string name="analysis_progress">Analyzing %d%%</string>
 
-    <string name="no_entities">No entities found</string>
-    <string name="timeframe_24_hours">Past 24 hours</string>
-    <string name="timeframe_7_days">Past 7 days</string>
-    <string name="timeframe_30_days">Past 30 days</string>
-    <string name="timeframe_year">Past year</string>
-    <string name="timeframe_all_time">All time</string>
-    <string name="backup_failed">Backup failed</string>
+  <string name="no_entities">No entities found</string>
+  <string name="timeframe_24_hours">Past 24 hours</string>
+  <string name="timeframe_7_days">Past 7 days</string>
+  <string name="timeframe_30_days">Past 30 days</string>
+  <string name="timeframe_year">Past year</string>
+  <string name="timeframe_all_time">All time</string>
+  <string name="backup_failed">Backup failed</string>
 
-    <string name="average_sentiment_label">Average sentiment: %s</string>
-    <string name="average_sentiment_24_hours_delta">(%s from previous 24 hours)</string>
-    <string name="average_sentiment_7_days_delta">(%s from previous 7 days)</string>
-    <string name="average_sentiment_30_days_delta">(%s from previous 30 days)</string>
-    <string name="most_positive_sentence_label">Most positive sentence:</string>
-    <string name="subscribe">Subscribe</string>
-    <string name="new_entry">New entry</string>
-    <string name="module_type_VIEW_ENTRIES">View entries</string>
-    <string name="sentiment_label">Sentiment: %s</string>
-    <string name="create_new_component">Create new component</string>
-    <string name="name_optional">Name (optional)</string>
-    <string name="name_required">Name (required)</string>
-    <string name="text">Text</string>
-    <string name="number">Number</string>
-    <string name="no_value">No value</string>
-    <string name="save_for_future_reuse">Save for future reuse</string>
-    <string name="select_component">Select a component</string>
-    <string name="submit">Submit</string>
-    <string name="display_name_in_entry">Display name in entry</string>
-    <string name="name_min_label">%s (min: %s)</string>
-    <string name="name_max_label">%s (max: %s)</string>
-    <string name="name_min_max_label">%s (min: %s, max: %s)</string>
-    <string name="number_component_value_minimum_validation">Value must be greater than or equal
-        to %s.</string>
-    <string name="number_component_value_maximum_validation">Value must be less than or equal
-        to %s.</string>
-    <string name="validation_required">Please enter a value.</string>
-    <string name="validation_number_required">Please enter a number.</string>
+  <string name="average_sentiment_label">Average sentiment: %s</string>
+  <string name="average_sentiment_24_hours_delta">(%s from previous 24 hours)</string>
+  <string name="average_sentiment_7_days_delta">(%s from previous 7 days)</string>
+  <string name="average_sentiment_30_days_delta">(%s from previous 30 days)</string>
+  <string name="most_positive_sentence_label">Most positive sentence:</string>
+  <string name="subscribe">Subscribe</string>
+  <string name="new_entry">New entry</string>
+  <string name="module_type_VIEW_ENTRIES">View entries</string>
+  <string name="sentiment_label">Sentiment: %s</string>
+  <string name="create_new_component">Create new component</string>
+  <string name="name_optional">Name (optional)</string>
+  <string name="name_required">Name (required)</string>
+  <string name="text">Text</string>
+  <string name="number">Number</string>
+  <string name="no_value">No value</string>
+  <string name="save_for_future_reuse">Save for future reuse</string>
+  <string name="select_component">Select a component</string>
+  <string name="submit">Submit</string>
+  <string name="display_name_in_entry">Display name in entry</string>
+  <string name="name_min_label">%s (min: %s)</string>
+  <string name="name_max_label">%s (max: %s)</string>
+  <string name="name_min_max_label">%s (min: %s, max: %s)</string>
+  <string name="number_component_value_minimum_validation">Value must be greater than or equal
+    to %s.
+  </string>
+  <string name="number_component_value_maximum_validation">Value must be less than or equal
+    to %s.
+  </string>
+  <string name="validation_required">Please enter a value.</string>
+  <string name="validation_number_required">Please enter a number.</string>
+
+  <string name="text_print">Print</string>
+  <string name="text_share">Share</string>
+  <string name="print_entries">print entries</string>
+  <string name="generic_error_message">Sorry! Something went wrong</string>
+  <string name="loading">Loading...</string>
+  <string name="creating_pdf">Creating PDF...</string>
+  <string name="sorry">Sorry!</string>
+  <string name="version_error_min_7">This operation is only available to users using Android version 7 or later.
+  </string>
 </resources>

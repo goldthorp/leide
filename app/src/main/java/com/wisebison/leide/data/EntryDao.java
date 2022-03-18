@@ -35,6 +35,13 @@ public abstract class EntryDao {
     "CASE WHEN :isAsc = 0 THEN display_timestamp END DESC")
   abstract List<EntryForm> _getList(boolean isAsc);
 
+  @Query("SELECT DISTINCT(e.id), e.display_timestamp, e.time_zone FROM `entry` e")
+  abstract List<EntryForm> _getListForExport();
+
+  public BackgroundUtil.Background<List<EntryForm>> getListForExport() {
+    return BackgroundUtil.doInBackground(this::_getListForExport);
+  }
+
   public BackgroundUtil.Background<List<EntryForm>> getList(final boolean isAsc) {
     return BackgroundUtil.doInBackground(() -> _getList(isAsc));
   }

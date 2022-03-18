@@ -103,6 +103,8 @@ dependencies {
     annotationProcessor 'com.google.dagger:hilt-android-compiler:2.28-alpha'
 
     implementation 'com.maltaisn:calcdialog:2.2.0'
+
+    implementation 'com.github.tejpratap46:PDFCreatorAndroid:3.0.2'
 }
 
 apply plugin: "androidx.navigation.safeargs"

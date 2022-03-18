@@ -1,40 +1,36 @@
 package com.wisebison.leide.view;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
+import android.print.PDFPrint;
+import android.text.Html;
+import android.text.SpannableStringBuilder;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-
+import com.google.android.material.snackbar.BaseTransientBottomBar;
+import com.google.android.material.snackbar.Snackbar;
+import com.tejpratapsingh.pdfcreator.utils.PDFUtil;
 import com.wisebison.leide.R;
 import com.wisebison.leide.data.AppDatabase;
 import com.wisebison.leide.data.EntryDao;
-import com.wisebison.leide.model.EntryComponentForm;
 import com.wisebison.leide.model.EntryForm;
+import com.wisebison.leide.util.Utils;
 
-import org.apache.commons.lang3.StringUtils;
-
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Objects;
-import java.util.TimeZone;
 
 public class MenuActivity extends AppCompatActivity {
 
-  private static final String TAG = "MenuActivity";
-
-  private static final int CREATE_FILE_REQUEST_CODE = 1;
+  private static final String TAG = MenuActivity.class.getSimpleName();
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -43,82 +39,55 @@ public class MenuActivity extends AppCompatActivity {
 
     final TextView exportEntries = findViewById(R.id.export_entries_text_view);
     exportEntries.setOnClickListener(v -> {
-      final Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-
-      intent.addCategory(Intent.CATEGORY_OPENABLE);
-      intent.setType("text/plain");
+      final File externalFilesDir = getApplicationContext().getExternalFilesDir(null);
+      final EntryDao entryDao = AppDatabase.getInstance(getApplicationContext()).getEntryDao();
+      final SpannableStringBuilder ssb = new SpannableStringBuilder();
+      final Snackbar snackbar =
+        Snackbar.make(findViewById(R.id.menu_layout), R.string.loading, BaseTransientBottomBar.LENGTH_INDEFINITE);
+      snackbar.show();
       final SimpleDateFormat sdf = new SimpleDateFormat("M-d-yy_HHmm", Locale.US);
-      intent.putExtra(Intent.EXTRA_TITLE,
-        "export_" + sdf.format(new Date(System.currentTimeMillis())) + ".txt");
+      entryDao.getListForExport().then(entries -> {
+        for (final EntryForm entry : entries) {
+          ssb.append(entry.getEntryForDisplay(getApplicationContext(), false));
+          ssb.append("\n\n");
+        }
+        snackbar.setText(R.string.creating_pdf);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+          final String html = Html.toHtml(ssb, Html.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE);
+          PDFUtil.generatePDFFromHTML(getApplicationContext(), new File(externalFilesDir,
+              "export_" + sdf.format(new Date(System.currentTimeMillis())) + ".pdf"),
+            html, new PDFPrint.OnPDFPrintListener() {
+              @Override
+              public void onSuccess(final File file) {
+                snackbar.dismiss();
+                try {
+                  final Uri pdfUri = Uri.fromFile(file);
+                  final Intent intent = new Intent(getApplicationContext(), PdfViewerActivity.class);
+                  intent.putExtra(PdfViewerActivity.PDF_FILE_URI, pdfUri);
+                  startActivity(intent);
+                } catch (final Exception e) {
+                  e.printStackTrace();
+                }
+              }
 
-      startActivityForResult(intent, CREATE_FILE_REQUEST_CODE);
+              @Override
+              public void onError(final Exception exception) {
+                snackbar.setText(R.string.generic_error_message);
+                Utils.doAfter(snackbar::dismiss, 3000);
+              }
+            });
+        } else {
+          new AlertDialog.Builder(getApplicationContext())
+            .setTitle(R.string.sorry)
+            .setMessage(R.string.version_error_min_7)
+            .create();
+        }
+      });
     });
 
     final ImageView exit = findViewById(R.id.exit);
     exit.setOnClickListener(v -> {
       finish();
-    });
-  }
-
-  @Override
-  public void onActivityResult(
-    final int requestCode, final int resultCode, final Intent resultData) {
-    super.onActivityResult(requestCode, resultCode, resultData);
-    if (requestCode == CREATE_FILE_REQUEST_CODE
-      && resultCode == Activity.RESULT_OK) {
-      if (resultData != null) {
-        final Uri uri = Objects.requireNonNull(resultData.getData());
-        try {
-          final ParcelFileDescriptor pfd =  getContentResolver().openFileDescriptor(uri, "w");
-          writeEntryTextToFile(Objects.requireNonNull(pfd));
-        } catch (final FileNotFoundException e) {
-          e.printStackTrace();
-        }
-      }
-    }
-  }
-
-  private void writeEntryTextToFile(final ParcelFileDescriptor pfd) {
-    final FileOutputStream fos = new FileOutputStream(pfd.getFileDescriptor());
-
-    final StringBuilder stringBuilder = new StringBuilder();
-    final AppDatabase appDatabase = AppDatabase.getInstance(this);
-    final EntryDao entryDao = appDatabase.getEntryDao();
-    entryDao.getList(true).then(entries -> {
-      for (final EntryForm entry : entries) {
-        String location = null;
-        String text = null;
-        for (final EntryComponentForm component : entry.getComponents()) {
-          if (component.getType() != null) {
-            switch (component.getType()) {
-              case TEXT:
-                text = component.getValue(null);
-                break;
-              case LOCATION:
-                location = component.getValue("display");
-                break;
-            }
-            if (StringUtils.isNotBlank(text)) {
-              final SimpleDateFormat sdf = new SimpleDateFormat("E, MMM dd yyyy h:mm a", Locale.US);
-              sdf.setTimeZone(TimeZone.getTimeZone(entry.getTimeZone()));
-              final String formattedDate = sdf.format(entry.getTimestamp());
-              stringBuilder.append(formattedDate).append("\n");
-              stringBuilder.append(text).append("\n");
-              if (StringUtils.isNotBlank(location)) {
-                stringBuilder.append(location).append("\n");
-              }
-            }
-          }
-        }
-        stringBuilder.append("\n\n");
-      }
-      try {
-        fos.write(stringBuilder.toString().getBytes());
-        fos.close();
-        pfd.close();
-      } catch (final IOException e) {
-        e.printStackTrace();
-      }
     });
   }
 
